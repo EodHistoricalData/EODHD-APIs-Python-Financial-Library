@@ -15,6 +15,9 @@ from requests.exceptions import HTTPError as requests_HTTPError
 from rich.console import Console
 from rich.progress import track
 
+
+from eodhd.APIs import *
+
 # minimal traceback
 sys.tracebacklimit = 1
 
@@ -332,6 +335,56 @@ class APIClient:
                 "volume",
             ]
         ]
+    
+    def get_historical_dividends_data(self, ticker, date_to = None, date_from = None) -> list:
+        """Available args:
+            ticker (required) - consists of two parts: [SYMBOL_NAME].[EXCHANGE_ID]. Example: AAPL.US
+            date_from (not required) - date from with format Y-m-d. Example: 2000-01-01
+            date_to (not required) - date from with format Y-m-d. Example: 2000-01-01
+            If you skip date_from or date_to then you’ll get the maximum available data for the symbol.
+            More information: https://eodhistoricaldata.com/financial-apis/api-splits-dividends/"""
+
+        api_call =  HistoricalDividendsAPI()
+        return api_call.get_historical_dividends_data(api_token = self._api_key, ticker = ticker, date_from = date_from, date_to = date_to)
+    
+
+    def get_historical_splits_data(self, ticker, date_to = None, date_from = None) -> list:
+        """Available args:
+            ticker (required) - consists of two parts: [SYMBOL_NAME].[EXCHANGE_ID]. Example: AAPL.US
+            date_from (not required) - date from with format Y-m-d. Example: 2000-01-01
+            date_to (not required) - date from with format Y-m-d. Example: 2000-01-01
+            If you skip date_from or date_to then you’ll get the maximum available data for the symbol.
+            More information: https://eodhistoricaldata.com/financial-apis/api-splits-dividends/"""
+
+        api_call =  HistoricalSplitsAPI()
+        return api_call.get_historical_splits_data(api_token = self._api_key, ticker = ticker, date_from = date_from, date_to = date_to)
+    
+
+    def get_technical_indicator_data(self, ticker: str, function: str, period: int = 50,
+                                     date_from: str = None, date_to: str = None, order: str = 'a', 
+                                     splitadjusted_only: str = '0') -> list:
+        """Available args:
+            ticker (required) - consists of two parts: [SYMBOL_NAME].[EXCHANGE_ID]. Example: AAPL.US
+            function (required) – the function that will be applied to data series to get technical indicator data. 
+                The list of possible functions with additional parameters you get here: 
+                https://eodhistoricaldata.com/financial-apis/technical-indicators-api/
+            period – the number of data points used to calculate each moving average value. 
+                Valid range from 2 to 100000 with the default value – 50.
+            date_from (not required) - date from with format Y-m-d. Example: 2000-01-01
+            date_to (not required) - date from with format Y-m-d. Example: 2000-01-01
+            order – use ‘a’ for ascending dates (from old to new) and ‘d’ for descending dates (from new to old). 
+                By default, dates are shown in ascending order.
+            splitadjusted_only – default value is ‘0’. 
+                By default, we calculate data for some functions by closes adjusted with splits and dividends. 
+                If you need to calculate the data by closes adjusted only with splits, set this parameter to ‘1’. 
+                Works with the following functions: sma, ema, wma, volatility, rsi, slope, and macd.
+            """
+
+        api_call =  TechnicalIndicatorAPI()
+        return api_call.get_technical_indicator_data(api_token = self._api_key, ticker = ticker, function = function,
+                                                     period = period, date_from = date_from, date_to = date_to,
+                                                     order = order, splitadjusted_only = splitadjusted_only)
+
 
 
 class ScannerClient:
