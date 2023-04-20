@@ -16,7 +16,7 @@ with open(path.join(HERE, "README.md"), encoding="utf-8") as f:
 # This call to setup() does all the work
 setup(
     name="eodhd",
-    version="1.0.11",
+    version="1.0.12",
     description="Official EODHD API Python Library",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -31,7 +31,7 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Operating System :: OS Independent",
     ],
-    packages=find_packages(include=["eodhd"]),
+    packages=find_packages(include=["eodhd"]) + ['eodhd.APIs'],
     include_package_data=True,
     install_requires=[
         "websockets==10.3",
