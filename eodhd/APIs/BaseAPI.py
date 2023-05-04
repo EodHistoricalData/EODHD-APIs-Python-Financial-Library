@@ -4,10 +4,13 @@ from requests import get as requests_get
 from requests import ConnectionError as requests_ConnectionError
 from requests import Timeout as requests_Timeout
 from requests.exceptions import HTTPError as requests_HTTPError
+from rich.console import Console
 
 class BaseAPI:
+
     def __init__(self) -> None:
         self._api_url = "https://eodhistoricaldata.com/api"
+        self.console = Console()
 
 
     def _rest_get_method(self, api_key: str, endpoint: str = "", uri: str = "", querystring: str = ""):
@@ -24,6 +27,7 @@ class BaseAPI:
                     if "message" in resp.json():
                         resp_message = resp.json()["message"]
                     elif "errors" in resp.json():
+                        print(resp.json())
                         self.console.log(resp.json())
                         sys.exit(1)
                     else:

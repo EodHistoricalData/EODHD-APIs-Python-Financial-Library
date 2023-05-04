@@ -344,7 +344,7 @@ class APIClient:
             If you skip date_from or date_to then you’ll get the maximum available data for the symbol.
             More information: https://eodhistoricaldata.com/financial-apis/api-splits-dividends/"""
 
-        api_call =  HistoricalDividendsAPI()
+        api_call = HistoricalDividendsAPI()
         return api_call.get_historical_dividends_data(api_token = self._api_key, ticker = ticker, date_from = date_from, date_to = date_to)
     
 
@@ -356,7 +356,7 @@ class APIClient:
             If you skip date_from or date_to then you’ll get the maximum available data for the symbol.
             More information: https://eodhistoricaldata.com/financial-apis/api-splits-dividends/"""
 
-        api_call =  HistoricalSplitsAPI()
+        api_call = HistoricalSplitsAPI()
         return api_call.get_historical_splits_data(api_token = self._api_key, ticker = ticker, date_from = date_from, date_to = date_to)
     
 
@@ -380,10 +380,63 @@ class APIClient:
                 Works with the following functions: sma, ema, wma, volatility, rsi, slope, and macd.
             """
 
-        api_call =  TechnicalIndicatorAPI()
+        api_call = TechnicalIndicatorAPI()
         return api_call.get_technical_indicator_data(api_token = self._api_key, ticker = ticker, function = function,
                                                      period = period, date_from = date_from, date_to = date_to,
                                                      order = order, splitadjusted_only = splitadjusted_only)
+    
+
+    def get_live_stock_prices(self, ticker, date_to = None, date_from = None) -> list:
+        """Available args:
+            ticker (required) - consists of two parts: [SYMBOL_NAME].[EXCHANGE_ID]. Example: AAPL.US
+            More information: https://eodhistoricaldata.com/financial-apis/live-realtime-stocks-api/
+            """
+
+        api_call = LiveStockPricesAPI()
+        return api_call.get_live_stock_prices(api_token = self._api_key, ticker = ticker)
+    
+    
+    def get_economic_events_data(self, date_from: str = None, date_to: str = None,
+                                 country: str = None, comparison: str = None, offset: int = None, limit: int = None) -> list:
+        """Available args:
+            date_from (not required) - date from with format Y-m-d. Example: 2000-01-01
+            date_to (not required) - date from with format Y-m-d. Example: 2000-01-01
+            country (not required) - The country code is in ISO 3166 format, has 2 symbols
+            comparison (not required) - Possible values: mom, qoq, yoy
+            offset (not required) - Possible values from 0 to 1000. Default value: 0
+            limit (not required) - Possible values from 0 to 1000. Default value: 50.
+            More information: https://eodhistoricaldata.com/financial-apis/economic-events-data-api/
+            """
+
+        api_call = EconomicEventsDataAPI()
+        return api_call.get_economic_events_data(api_token = self._api_key, date_from = date_from, date_to = date_to,
+                                 country = country, comparison = comparison, offset = offset, limit = limit)
+    
+
+    def get_insider_transactions_data(self, date_from: str = None, date_to: str = None,
+                                 code: str = None, limit: int = None) -> list:
+        """Available args:
+            date_from (not required) - date from with format Y-m-d. Example: 2000-01-01
+            date_to (not required) - date from with format Y-m-d. Example: 2000-01-01
+            code (not required) - to get the data only for Apple Inc (AAPL), use AAPL.US or AAPL ticker code. 
+                By default, all possible symbols will be displayed.
+            limit (not required) - the limit for entries per result, from 1 to 1000. Default value: 100.
+            More information: https://eodhistoricaldata.com/financial-apis/insider-transactions-api/
+            """
+
+        api_call = InsiderTransactionsAPI()
+        return api_call.get_insider_transactions_data(api_token = self._api_key, date_from = date_from, date_to = date_to,
+                                 code = code, limit = limit)
+    
+    
+    def get_fundamentals_data(self, ticker: str) -> list:
+        """Available args:
+            ticker (required) - consists of two parts: [SYMBOL_NAME].[EXCHANGE_ID]. Example: AAPL.US
+            More information: https://eodhistoricaldata.com/financial-apis/stock-etfs-fundamental-data-feeds/
+            """
+
+        api_call = FundamentalDataAPI()
+        return api_call.get_fundamentals_data(api_token = self._api_key, ticker = ticker)
 
 
 
