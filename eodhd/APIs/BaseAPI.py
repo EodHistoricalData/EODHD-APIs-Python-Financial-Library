@@ -27,7 +27,6 @@ class BaseAPI:
                     if "message" in resp.json():
                         resp_message = resp.json()["message"]
                     elif "errors" in resp.json():
-                        print(resp.json())
                         self.console.log(resp.json())
                         sys.exit(1)
                     else:
