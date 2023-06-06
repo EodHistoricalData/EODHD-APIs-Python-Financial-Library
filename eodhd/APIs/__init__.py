@@ -5,3 +5,10 @@ from .LiveStockPricesAPI import LiveStockPricesAPI
 from .EconomicEventsDataAPI import EconomicEventsDataAPI
 from .InsiderTransactionsAPI import InsiderTransactionsAPI
 from .FundamentalDataAPI import FundamentalDataAPI
+from .BulkFundamentalDataAPI import BulkFundamentalDataAPI
+from .UpcomingEarningsAPI import UpcomgingEarningsAPI
+from .EarningTrendsAPI import EarningTrendsAPI
+from .UpcomingIPOsAPI import UpcomingIPOsAPI
+from .UpcomingSplitsAPI import UpcomingSplitsAPI
+from .MacroIndicatorsAPI import MacroIndicatorsAPI
+from .BondsFundamentalsAPI import BondsFundamentalsAPI
