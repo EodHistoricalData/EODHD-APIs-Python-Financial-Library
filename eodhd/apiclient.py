@@ -31,6 +31,7 @@ class Interval(Enum):
     ONEDAY = "1d"
 
 
+
 class DateUtils:
     """Utility class"""
 
@@ -342,7 +343,7 @@ class APIClient:
             date_from (not required) - date from with format Y-m-d. Example: 2000-01-01
             date_to (not required) - date from with format Y-m-d. Example: 2000-01-01
             If you skip date_from or date_to then you’ll get the maximum available data for the symbol.
-            More information: https://eodhistoricaldata.com/financial-apis/api-splits-dividends/"""
+            For more information visit: https://eodhistoricaldata.com/financial-apis/api-splits-dividends/"""
 
         api_call = HistoricalDividendsAPI()
         return api_call.get_historical_dividends_data(api_token = self._api_key, ticker = ticker, date_from = date_from, date_to = date_to)
@@ -354,7 +355,7 @@ class APIClient:
             date_from (not required) - date from with format Y-m-d. Example: 2000-01-01
             date_to (not required) - date from with format Y-m-d. Example: 2000-01-01
             If you skip date_from or date_to then you’ll get the maximum available data for the symbol.
-            More information: https://eodhistoricaldata.com/financial-apis/api-splits-dividends/"""
+            For more information visit: https://eodhistoricaldata.com/financial-apis/api-splits-dividends/"""
 
         api_call = HistoricalSplitsAPI()
         return api_call.get_historical_splits_data(api_token = self._api_key, ticker = ticker, date_from = date_from, date_to = date_to)
@@ -389,7 +390,7 @@ class APIClient:
     def get_live_stock_prices(self, ticker, date_to = None, date_from = None) -> list:
         """Available args:
             ticker (required) - consists of two parts: [SYMBOL_NAME].[EXCHANGE_ID]. Example: AAPL.US
-            More information: https://eodhistoricaldata.com/financial-apis/live-realtime-stocks-api/
+            For more information visit: https://eodhistoricaldata.com/financial-apis/live-realtime-stocks-api/
             """
 
         api_call = LiveStockPricesAPI()
@@ -405,7 +406,7 @@ class APIClient:
             comparison (not required) - Possible values: mom, qoq, yoy
             offset (not required) - Possible values from 0 to 1000. Default value: 0
             limit (not required) - Possible values from 0 to 1000. Default value: 50.
-            More information: https://eodhistoricaldata.com/financial-apis/economic-events-data-api/
+            For more information visit: https://eodhistoricaldata.com/financial-apis/economic-events-data-api/
             """
 
         api_call = EconomicEventsDataAPI()
@@ -421,7 +422,7 @@ class APIClient:
             code (not required) - to get the data only for Apple Inc (AAPL), use AAPL.US or AAPL ticker code. 
                 By default, all possible symbols will be displayed.
             limit (not required) - the limit for entries per result, from 1 to 1000. Default value: 100.
-            More information: https://eodhistoricaldata.com/financial-apis/insider-transactions-api/
+            For more information visit: https://eodhistoricaldata.com/financial-apis/insider-transactions-api/
             """
 
         api_call = InsiderTransactionsAPI()
@@ -432,13 +433,106 @@ class APIClient:
     def get_fundamentals_data(self, ticker: str) -> list:
         """Available args:
             ticker (required) - consists of two parts: [SYMBOL_NAME].[EXCHANGE_ID]. Example: AAPL.US
-            More information: https://eodhistoricaldata.com/financial-apis/stock-etfs-fundamental-data-feeds/
+            For more information visit: https://eodhistoricaldata.com/financial-apis/stock-etfs-fundamental-data-feeds/
             """
 
         api_call = FundamentalDataAPI()
         return api_call.get_fundamentals_data(api_token = self._api_key, ticker = ticker)
+    
+
+    def get_bulk_fundamentals_data(self, country = 'US', type = None, date = None,
+                                   symbols = None, filter = None) -> list:
+        """Available args:
+            type (not required) - can get splits, empty or dividends. 
+                for splits function returns all splits for US stocks in bulk for a particular day
+                for dividends function returns all dividends for US stocks in bulk for a particular day
+                if type will remain empty then returns end-of-day data for US stocks in bulk for a particular day
+            date (not required) - By default, the data for last trading day will be downloaded, but if you need any specific date
+                you can add parameter
+            symbols (not required) - To download last day data for several symbols, for example, 
+                for MSFT and AAPL, you can add the ‘symbols’ parameter. For non-US tickers, 
+                you should use the exchange code, for example, BMW.XETRA or SAP.F
+                If you want get data for several codes you need to input in the next type of format: AAPL,BMW.XETRA,SAP.F
+            For more information visit: https://eodhistoricaldata.com/financial-apis/bulk-api-eod-splits-dividends/
+            """
+
+        api_call = BulkFundamentalDataAPI()
+        return api_call.get_bulk_fundamentals_data(api_token = self._api_key, country = country, type = type,
+                                                   date = date, symbols = symbols, filter = filter)
+    
+
+    def get_upcoming_earnings_data(self, from_date = None, to_date = None, symbols = None) -> list:
+        """Available args:
+            from_date (not required) - Format: YYYY-MM-DD. The start date for earnings data, if not provided, today will be used.
+            to_date (not required) - Format: YYYY-MM-DD. The end date for earnings data, if not provided, today + 7 days will be used.
+            symbols (not required) - OPTIONAL. You can request specific symbols to get historical and upcoming data. 
+                If ‘symbols’ used, then ‘from’ and ‘to’ parameters will be ignored. 
+                You can use one symbol: ‘AAPL.US’ or several symbols separated by a comma: ‘AAPL.US, MS’
+            For more information visit: https://eodhistoricaldata.com/financial-apis/calendar-upcoming-earnings-ipos-and-splits/#Upcoming_Earnings_API
+            """
+    
+        api_call = UpcomgingEarningsAPI()
+        return api_call.get_upcoming_earnings_data(api_token = self._api_key, from_date = from_date, to_date = to_date,
+                                                    symbols = symbols)
 
 
+
+    def get_earning_trends_data(self, symbols) -> list:
+        """Available args:
+            symbols (required) - You can request specific symbols to get historical and upcoming data. 
+                f ‘symbols’ used, then ‘from’ and ‘to’ parameters will be ignored. 
+                ou can use one symbol: ‘AAPL.US’ or several symbols separated by a comma: ‘AAPL.US, MS’
+            For more information visit: https://eodhistoricaldata.com/financial-apis/calendar-upcoming-earnings-ipos-and-splits/#Earnings_Trends_API
+            """
+        api_call = EarningTrendsAPI()
+        return api_call.get_earning_trends_data(api_token = self._api_key, symbols = symbols)
+    
+
+    def get_upcoming_IPOs_data(self, from_date = None, to_date = None) -> list:
+        """Available args:
+            from_date (not required) - Format: YYYY-MM-DD. The start date for ipos data, if not provided, today will be used.
+            to_date (not required) - Format: YYYY-MM-DD. The end date for ipos data, if not provided, today + 7 days will be used.
+            For more information visit: https://eodhistoricaldata.com/financial-apis/calendar-upcoming-earnings-ipos-and-splits/#Upcoming_Earnings_API
+            """
+    
+        api_call = UpcomingIPOsAPI()
+        return api_call.get_upcoming_IPOs_data(api_token = self._api_key, from_date = from_date, to_date = to_date)
+    
+
+    def get_upcoming_splits_data(self, from_date = None, to_date = None) -> list:
+        """Available args:
+            from_date (not required) - Format: YYYY-MM-DD. The start date for splits data, if not provided, today will be used.
+            to_date (not required) - Format: YYYY-MM-DD. The end date for splits data, if not provided, today + 7 days will be used.
+            For more information visit: https://eodhistoricaldata.com/financial-apis/calendar-upcoming-earnings-ipos-and-splits/#Upcoming_Earnings_API
+            """
+        
+        api_call = UpcomingSplitsAPI()
+        return api_call.get_upcoming_splits_data(api_token = self._api_key, from_date = from_date, to_date = to_date)
+    
+
+    def get_macro_indicators_data(self, country, indicator = None) -> list:
+        """Available args:
+            country (required) - Defines the country for which the indicator will be shown. 
+                The country should be defined in the Alpha-3 ISO format. Possible values: USA, FRA, DEU…
+            indicator (not required) - Defines which macroeconomics data indicator will be shown. 
+                See the list of possible indicators below. The default value is ‘gdp_current_usd‘.
+            All possible indicators will be avaliable on: https://eodhistoricaldata.com/financial-apis/macroeconomics-data-and-macro-indicators-api/
+            """
+
+        api_call = MacroIndicatorsAPI()
+        return api_call.get_macro_indicators_data(api_token = self._api_key, country = country, indicator = indicator)
+
+
+    def get_bonds_fundamentals_data(self, isin = None) -> list:
+        """Available args:
+            isin - An International Securities Identification Number, in current function isin may be cusip-code. 
+                Other IDs are not supported at the moment.
+            For more information visit: https://eodhistoricaldata.com/financial-apis/bonds-fundamentals-and-historical-api/
+            """
+        
+        api_call = BondsFundamentalsAPI()
+        return api_call.get_bonds_fundamentals_data(api_token = self._api_key, isin = isin)
+    
 
 class ScannerClient:
     """Scanner class"""
