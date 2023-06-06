@@ -29,8 +29,6 @@ class Interval(Enum):
     FIVEMINUTES = "5m"
     HOUR = "1h"
     ONEDAY = "1d"
-    ONEWEEK = "1w"
-    ONEMONTH = "1mon"
 
 
 
