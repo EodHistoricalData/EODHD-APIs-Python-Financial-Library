@@ -29,6 +29,8 @@ class Interval(Enum):
     FIVEMINUTES = "5m"
     HOUR = "1h"
     ONEDAY = "1d"
+    WEEK = 'w'
+    MONTH = 'm'
 
 
 
@@ -153,11 +155,9 @@ class APIClient:
         interval: str = Interval,
         range_start: str = "",
         range_end: str = "",
+        results = 300
     ) -> dict:
         """Initiates a REST API call"""
-
-        # default set of results
-        results = 300
 
         # validate symbol
         prog = re_compile(r"^[A-z0-9-$\.+]{1,48}$")
@@ -181,7 +181,7 @@ class APIClient:
             self.console.log(err)
             return pd.DataFrame()
 
-        if interval == "1d":
+        if interval == "1d" or interval == 'w' or interval == 'm':
             prog = re_compile(r"^\d{4}\-\d{2}-\d{2}$")
 
             if range_end == "" or (range_end != "" and not prog.match(range_end)):
@@ -202,12 +202,24 @@ class APIClient:
                     self.console.log("invalid start date (yyyy-mm-dd):", range_start)
                     sys.exit()
 
-            df_data = self._rest_get(
-                "eod",
-                symbol,
-                f"&interval={interval}&from={str(date_from)}&to={str(date_to)}",
-            )
-
+            if interval == '1d':
+                df_data = self._rest_get(
+                    "eod",
+                    symbol,
+                    f"&interval={interval}&from={str(date_from)}&to={str(date_to)}"
+                )
+            elif interval == 'w':
+                df_data = self._rest_get(
+                    "eod",
+                    symbol,
+                    f"&period=w&from={str(date_from)}&to={str(date_to)}"
+                )
+            elif interval == 'm':
+                df_data = self._rest_get(
+                    "eod",
+                    symbol,
+                    f"&period=m&from={str(date_from)}&to={str(date_to)}"
+                )
         else:
             prog = re_compile(r"^\d{4}\-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$")
 
@@ -242,6 +254,7 @@ class APIClient:
                     symbol,
                     f"&interval={interval}&from={str(epoch_from)}&to={str(epoch_to)}",
                 )
+                
             else:
                 df_data = self._rest_get(
                     "intraday",
@@ -250,29 +263,19 @@ class APIClient:
                 )
 
             if len(df_data) == 0:
-                return df_data[
-                    [
-                        "symbol",
-                        "interval",
-                        "open",
-                        "high",
-                        "low",
-                        "close",
-                        "adjusted_close",
-                        "volume",
-                    ]
-                ]
+                columns_eod = ["symbol", "interval", "open", "high", "low", "close", "adjusted_close", "volume"]
+                return pd.DataFrame(columns = columns_eod)
 
             if range_start == "" and range_end == "":
-                df_data = df_data.tail(300)
+                df_data = df_data.tail(results)
             elif range_start != "" and range_end == "":
-                df_data = df_data.head(300)
+                df_data = df_data.head(results)
 
         df_data["symbol"] = symbol
         df_data["interval"] = interval
 
         # convert dataframe to a time series
-        if interval == "1d":
+        if interval == "1d" or interval == 'w' or interval == 'm':
             tsidx = pd.DatetimeIndex(pd.to_datetime(df_data["date"]).dt.strftime("%Y-%m-%d"))
             df_data.set_index(tsidx, inplace=True)
             df_data = df_data.drop(columns=["date"])
@@ -282,7 +285,7 @@ class APIClient:
             df_data = df_data.drop(columns=["datetime"])
 
         # rename columns
-        if interval != "1d":
+        if interval != "1d" and interval != 'w' and interval != 'm':
             df_data.columns = [
                 "epoch",
                 "gmtoffset",
@@ -296,7 +299,7 @@ class APIClient:
             ]
 
         # return dataset
-        if interval == "1d":
+        if interval == "1d" or interval == 'w' or interval == 'm':
             df_data["adjusted_close"] = df_data["adjusted_close"].astype(object)
             df_data.fillna(0, inplace=True)
 
@@ -533,6 +536,95 @@ class APIClient:
         api_call = BondsFundamentalsAPI()
         return api_call.get_bonds_fundamentals_data(api_token = self._api_key, isin = isin)
     
+    def exchange_EOD(self, country = 'US', date = None, symbols = None, filter = None) -> list:
+        """Available args:
+            Returns end-of-day data for US stocks in bulk for a particular day. 
+            date (not required) - By default, the data for last trading day will be downloaded, but if you need any specific date
+                you can add parameter
+            symbols (not required) - To download last day data for several symbols, for example, 
+                for MSFT and AAPL, you can add the ‘symbols’ parameter. For non-US tickers, 
+                you should use the exchange code, for example, BMW.XETRA or SAP.F
+                If you want get data for several codes you need to input in the next type of format: AAPL,BMW.XETRA,SAP.F
+            API limits 100 000 requests per day
+            For more information visit: https://eodhistoricaldata.com/financial-apis/bulk-api-eod-splits-dividends/
+            """
+
+        api_call = BulkforEODSplitsDividendsAPI()
+        return api_call.exchange_EOD(api_token = self._api_key, country = country, date = date, symbols = symbols, filter = filter)
+    
+    
+    def get_list_of_exchanges(self):
+        """Available args:
+            Function returns list of avaliable exchanges
+            """
+        
+        api_call = ListOfExchangesAPI()
+        return api_call.get_list_of_exchanges(api_token = self._api_key)
+    
+    def get_list_of_tickers(self, code, delisted = 1):
+        """Available args:
+            delisted (not required) - by default, this API provides only tickers that were active at least a month ago, 
+                to get the list of inactive (delisted) tickers please use the parameter “delisted=1”
+            code (required) - For US exchanges you can also get all US tickers, 
+                then you should use the ‘US’ exchange code and tickers only for the particular exchange, 
+                the list of possible US exchanges to request:'US', NYSE', 'NASDAQ', 'BATS', 'OTCQB', 'PINK', 'OTCQX', 
+                'OTCMKTS', 'NMFQS', 'NYSE MKT','OTCBB', 'OTCGREY', 'BATS', 'OTC'
+            For more information visit: https://eodhistoricaldata.com/financial-apis/exchanges-api-list-of-tickers-and-trading-hours/    
+            """
+        
+        api_call = ListOfExchangesAPI()
+        return api_call.get_list_of_tickers(api_token = self._api_key, delisted = delisted, code = code)
+    
+    def get_details_trading_hours_stock_market_holidays(self, code, from_date = None, to_date = None):
+        """Available args:
+            Use the exchange code from the API endpoint above.
+        For more information visit: https://eodhistoricaldata.com/financial-apis/exchanges-api-trading-hours-and-stock-market-holidays/
+            """
+        
+        api_call = TradingHours_StockMarketHolidays_SymbolsChangeHistoryAPI()
+        return api_call.get_details_trading_hours_stock_market_holidays(api_token = self._api_key, code = code, 
+                                                                        from_date = from_date, to_date = to_date)
+    
+    def symbol_change_history(self, from_date = None, to_date = None):
+        """Available args:
+            from and to (not required) - the format is ‘YYYY-MM-DD’. 
+                If you need data from Jul 22, 2022, to Aug 10, 2022, you should use from=2022-07-22 and to=2022-08-10.
+            For more information visit: https://eodhistoricaldata.com/financial-apis/exchanges-api-trading-hours-and-stock-market-holidays/
+            """
+        api_call = TradingHours_StockMarketHolidays_SymbolsChangeHistoryAPI()
+        return api_call.symbol_change_history(api_token = self._api_key, from_date = from_date, to_date = to_date)
+    
+    def stock_market_screener(self, sort = None, filters = None, limit = None, signals = None, offset = None):
+        """Available args:
+            filters (not required) - Usage: filters=[[“field1”, “operation1”, value1],[“field2”, “operation2”, value2] , … ]. 
+                Filters out tickers by different fields.
+            signals (not required) - Usage: signals=signal1,signal2,…,signalN. Filter out tickers by signals, the calculated fields.
+            sort (not required) - Usage: sort=field_name.(asc|desc). Sorts all fields with type ‘Number’ in ascending/descending order.
+            limit (not required) - The number of results should be returned with the query. 
+                Default value: 50, minimum value: 1, maximum value: 100.
+            offset (not required) - The offset of the data. Default value: 0, minimum value: 0, maximum value: 1000. 
+                For example, to get 100 symbols starting from 200 you should use limit=100 and offset=200.
+            """
+        
+        api_call = StockMarketScreenerAPI()
+        return api_call.stock_market_screener(api_token = self._api_key, filters = filters, limit = limit, signals = signals,
+                                              offset = offset, sort = sort)
+    
+    def financial_news(self, s = None, t = None, from_date = None, to_date = None, limit = None, offset = None):
+        """Available args:
+            s (required if t empty) - The ticker code to get news for.
+            t (required if s empty) - The tag to get news on a given topic. 
+            limit (not required) - The number of results should be returned with the query. 
+                Default value: 50, minimum value: 1, maximum value: 1000.
+            offset (not required) - The offset of the data. Default value: 0, minimum value: 0. 
+                For example, to get 100 symbols starting from 200 you should use limit=100 and offset=200. 
+            from and to (not required) - the format is ‘YYYY-MM-DD’. 
+                If you need data from Mar 1, 2021, to Mar 10, 2021, you should use from=2021-03-01 and to=2021-03-10.
+            """
+        api_call = FinancialNewsAPI()
+        return api_call.financial_news(api_token = self._api_key, limit = limit,  from_date = from_date, to_date = to_date,
+                                              offset = offset, s = s, t = t)
+
 
 class ScannerClient:
     """Scanner class"""
