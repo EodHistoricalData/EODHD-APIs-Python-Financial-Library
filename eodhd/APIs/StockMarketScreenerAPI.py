@@ -11,7 +11,7 @@ class StockMarketScreenerAPI(BaseAPI):
         if sort is not None:
             query_string += '&sort=' + str(sort)
         if filters is not None:
-            query_string += '&filters=' + str(filters)
+            query_string += '&filters=' + str(filters).replace('\'', '\"')
         if limit is not None:
           query_string += '&limit=' + str(limit)
         if signals is not None:
