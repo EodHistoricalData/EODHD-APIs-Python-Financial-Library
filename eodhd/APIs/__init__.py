@@ -12,3 +12,8 @@ from .UpcomingIPOsAPI import UpcomingIPOsAPI
 from .UpcomingSplitsAPI import UpcomingSplitsAPI
 from .MacroIndicatorsAPI import MacroIndicatorsAPI
 from .BondsFundamentalsAPI import BondsFundamentalsAPI
+from .Bulk_for_EOD_Splits_DividendsAPI import BulkforEODSplitsDividendsAPI
+from .ListOfExchangesAPI import ListOfExchangesAPI
+from .TradingHours_StockMarketHolidays_SymbolsChangeHistory import TradingHours_StockMarketHolidays_SymbolsChangeHistoryAPI
+from .StockMarketScreenerAPI import StockMarketScreenerAPI
+from .FinancialNewsAPI import FinancialNewsAPI
