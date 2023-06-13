@@ -47,6 +47,13 @@ def main() -> None:
     # print(resp.dtypes)
     # print(resp.describe())
 
+    resp = api.get_historical_data("BTC-USD.CC", "1d", results=400)
+    # resp = api.get_historical_data("BTC-USD.CC", "1d", "2021-11-24")
+    # resp = api.get_historical_data("BTC-USD.CC", "1d", "2021-11-24", "2021-11-27")
+    print(resp)
+    # print(resp.dtypes)
+    # print(resp.describe())
+
 
 if __name__ == "__main__":
     main()
