@@ -1,6 +1,8 @@
 from .BaseAPI import BaseAPI
 
-possible_tags = ['balance sheet', 'capital employed', 'class action', 'company announcement', 
+class FinancialNewsAPI(BaseAPI):
+
+    possible_tags = ['balance sheet', 'capital employed', 'class action', 'company announcement', 
                  'consensus eps estimate', 'consensus estimate', 'credit rating', 
                  'discounted cash flow', 'dividend payments', 'earnings estimate', 
                  'earnings growth', 'earnings per share', 'earnings release', 'earnings report', 
@@ -13,8 +15,6 @@ possible_tags = ['balance sheet', 'capital employed', 'class action', 'company a
                  'ratings', 'research analysis and reports', 'return on equity', 'revenue estimates', 
                  'revenue growth', 'roce', 'roe', 'share price', 'shareholder rights', 'shareholder', 
                  'shares outstanding', 'strong buy', 'total revenue', 'zacks investment research', 'zacks rank']
-
-class FinancialNewsAPI(BaseAPI):
 
     def financial_news(self, api_token: str, s = None, t = None, from_date = None, to_date = None, limit = None, offset = None):
 
@@ -29,7 +29,7 @@ class FinancialNewsAPI(BaseAPI):
         elif s is not None and t is None:
             query_string += '&s=' + str(s)
         else:
-            if t in possible_tags:
+            if t in self.possible_tags:
                 query_string += '&t=' + str(t)
             else:
                 raise ValueError("Incorrect value was fullfiled for s or t")

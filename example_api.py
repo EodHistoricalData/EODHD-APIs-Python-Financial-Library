@@ -54,6 +54,11 @@ def main() -> None:
     # print(resp.dtypes)
     # print(resp.describe())
 
+    resp = api.get_details_trading_hours_stock_market_holidays(code = 'US', from_date = '2022-12-01', to_date = '2023-01-03')
+    # resp = api.get_details_trading_hours_stock_market_holidays(code = 'US')
+    print(resp)
+
+
 
 if __name__ == "__main__":
     main()

@@ -370,7 +370,11 @@ class APIClient:
         """Available args:
             ticker (required) - consists of two parts: [SYMBOL_NAME].[EXCHANGE_ID]. Example: AAPL.US
             function (required) – the function that will be applied to data series to get technical indicator data. 
-                The list of possible functions with additional parameters you get here: 
+                All possible values for function parameter: 
+                                        ['avgvol', 'avgvolccy', 'sma', 'ema', 'wma', 'volatility', 'stochastic',
+                                        'rsi', 'stddev', 'stochrsi', 'slope', 'dmi', 'adx', 'macd', 'atr',
+                                        'cci', 'sar', 'bbands', 'format_amibroker']
+                Description for possible functions you get here: 
                 https://eodhistoricaldata.com/financial-apis/technical-indicators-api/
             period – the number of data points used to calculate each moving average value. 
                 Valid range from 2 to 100000 with the default value – 50.
@@ -624,6 +628,30 @@ class APIClient:
         api_call = FinancialNewsAPI()
         return api_call.financial_news(api_token = self._api_key, limit = limit,  from_date = from_date, to_date = to_date,
                                               offset = offset, s = s, t = t)
+    
+    def get_options_data(self, ticker, date_to = None, date_from = None, 
+                         trade_date_to = None, trade_date_from = None, contract_name = None):
+        """
+            Stock options data for top US stocks from NYSE and NASDAQ, the data for Options starts from April 2018. 
+            Options data is updated daily; however, 
+            the API does not provide a history for options contracts prices or other related data. 
+            That means: for each contract, there is only the current price, bid/ask, etc.
+            
+            1. IMPORTANT! For backward compatibility, you should use the from parameter with any value before the expiration date, 
+            the API recommends '2000-01-01'.
+
+            2. Note: option greeks and some additional value are available only for options with expiration date Feb 15, 2019, or later.
+
+            Available args:
+                ticker(string): Required - Could be any supported symbol. No default value.
+                date_to(DateTime) and date_from(DateTime): Optional - the beginning and end of the desired dates.
+                trade_date_from(DateTime): Optional - filters OPTIONS by lastTradeDateTime. Default value is blank.
+                trade_date_to(DateTime): Optional - filters OPTIONS by lastTradeDateTime. Default value is blank.
+                contract_name(string): Optional - Name of a particular contract.
+            """
+        api_call = OptionsDataAPI()
+        return api_call.get_options_data(api_token = self._api_key, ticker = ticker, date_to = date_to, date_from = date_from, 
+                         trade_date_to = trade_date_to, trade_date_from = trade_date_from, contract_name = contract_name)
 
 
 class ScannerClient:
