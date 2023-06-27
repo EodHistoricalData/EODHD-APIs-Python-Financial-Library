@@ -156,7 +156,7 @@ class APIClient:
         range_start: str = "",
         range_end: str = "",
         results = 300
-    ) -> dict:
+    ) -> pd.DataFrame:
         """Initiates a REST API call"""
 
         # validate symbol
