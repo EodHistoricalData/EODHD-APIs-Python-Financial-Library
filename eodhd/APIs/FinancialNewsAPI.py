@@ -22,7 +22,7 @@ class FinancialNewsAPI(BaseAPI):
 
         query_string = ''
 
-        if (t.strip() == "" or t is None) and (s.strip() == "" or s is None):
+        if t is None and s is None:
             raise ValueError("s or t is empty. You need to add s or t to args")
         if t is not None and s is not None:
             query_string += '&s=' + str(s)
