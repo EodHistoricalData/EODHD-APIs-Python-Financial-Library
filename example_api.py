@@ -58,7 +58,64 @@ def main() -> None:
     # resp = api.get_details_trading_hours_stock_market_holidays(code = 'US')
     print(resp)
 
+    resp = api.get_bonds_fundamentals_data(isin = 'DE000CB83CF0')
+    print(resp)
 
+    resp = api.exchange_EOD(country = 'US', date = '2010-09-21', symbols = 'MSFT', filter = 'extended')
+    # resp = api.exchange_EOD(country = 'US', date = '2010-09-21', symbols = 'MSFT, AAPL, BMW.XETRA, SAP.F', filter = 'extended')
+    print(resp)
+
+    resp = api.get_bulk_fundamentals_data(country = 'US', type = 'splits', date = '2010-09-21', symbols = 'MSFT', filter = 'extended')
+    # resp = api.get_bulk_fundamentals_data(country = 'US', type = 'dividends', date = '2010-09-21', symbols = 'MSFT', filter = 'extended')
+    print(resp)
+
+    resp = api.get_earning_trends_data(symbols = 'AAPL.US')
+    # resp = api.get_earning_trends_data(symbols = 'AAPL.US, MS')
+    print(resp)
+
+    resp = api.get_economic_events_data(date_from = '2020-01-05', date_to = '2020-02-10', country = 'AU', comparison = 'mom',
+                                  offset = 50, limit = 50)
+    # resp = api.get_economic_events_data(date_from = '2020-01-05', date_to = '2020-02-10', country = 'AU', comparison = 'qoq', offset = 50, limit = 50)
+    # resp = api.get_economic_events_data(date_from = '2020-01-05', date_to = '2020-02-10', country = 'AU', comparison = 'yoy', offset = 50, limit = 50)
+    print(resp)
+
+    resp = api.financial_news(s = 'balance sheet', t = None, from_date = '2020-01-05', to_date = '2020-02-10', limit = 100, offset = 200)
+    # resp = api.financial_news(s = None, t = 'balance sheet', from_date = '2020-01-05', to_date = '2020-02-10', limit = 100, offset = 200)
+    print(resp)
+
+    resp = api.get_fundamentals_data(ticker = 'AAPL')
+    print(resp)
+
+    resp = api.get_historical_dividends_data(date_from = '2020-01-05', date_to = '2020-02-10', ticker = 'AAPL.US')
+    print(resp)
+
+    resp = api.get_historical_splits_data(date_from = '2020-01-05', date_to = '2020-02-10', ticker = 'AAPL.US')
+    print(resp)
+
+    resp = api.get_insider_transactions_data(date_from = '2020-01-05', date_to = '2020-02-10', code = 'AAPL', limit = 200)
+    #resp = api.get_insider_transactions_data(date_from = '2020-01-05', date_to = '2020-02-10', code = 'AAPL.US', limit = 200)
+    print(resp)
+
+    resp = api.get_live_stock_prices(date_from = '2020-01-05', date_to = '2020-02-10', ticker = 'AAPL.US')
+    print(resp)
+
+    resp = api.get_macro_indicators_data(country = 'US', indicator  = 'population_total')
+    # resp = api.get_macro_indicators_data(country = 'US', indicator  = 'consumer_price_index')
+    print(resp)
+
+    resp = api.stock_market_screener(sort = 'market_capitalization.desc', filters = '[["market_capitalization",">",1000], ["name","match","apple"], ["code","=","AAPL"],["exchange","=","us"],["sector","=","Technology"]]', limit = 10, signals = 'bookvalue_neg', offset = 0)
+    print(resp)
+
+    resp = api.get_upcoming_earnings_data(from_date = '2020-01-05', to_date = '2020-02-10', symbols = 'MSFT')
+    print(resp)
+
+    resp = api.get_upcoming_IPOs_data(from_date = '2020-01-05', to_date = '2020-02-10')
+    print(resp)
+
+    resp = api.get_upcoming_splits_data(from_date = '2020-01-05', to_date = '2020-02-10')
+    print(resp)
+
+    
 
 if __name__ == "__main__":
     main()
