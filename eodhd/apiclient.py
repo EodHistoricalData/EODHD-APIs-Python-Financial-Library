@@ -571,8 +571,8 @@ class APIClient:
                 to get the list of inactive (delisted) tickers please use the parameter “delisted=1”
             code (required) - For US exchanges you can also get all US tickers, 
                 then you should use the ‘US’ exchange code and tickers only for the particular exchange, 
-                the list of possible US exchanges to request:'US', NYSE', 'NASDAQ', 'BATS', 'OTCQB', 'PINK', 'OTCQX', 
-                'OTCMKTS', 'NMFQS', 'NYSE MKT','OTCBB', 'OTCGREY', 'BATS', 'OTC'
+                the list of possible US exchanges to request:'US', 'NYSE', 'NASDAQ', 'BATS', 'OTCQB', 'PINK', 'OTCQX', 
+                'OTCMKTS', 'NMFQS', 'NYSE MKT', 'OTCBB', 'OTCGREY', 'BATS', 'OTC'
             For more information visit: https://eodhistoricaldata.com/financial-apis/exchanges-api-list-of-tickers-and-trading-hours/    
             """
         

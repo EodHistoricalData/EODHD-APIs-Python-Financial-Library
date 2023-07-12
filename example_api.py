@@ -115,6 +115,19 @@ def main() -> None:
     resp = api.get_upcoming_splits_data(from_date = '2020-01-05', to_date = '2020-02-10')
     print(resp)
 
+    resp = api.get_technical_indicator_data(ticker = 'AAPL.US', function = 'avgvolccy', period = 100, date_from = '2020-01-05', date_to = '2020-02-10',
+                                            order = 'a', splitadjusted_only = '0')
+    print(resp)
+
+    resp = api.get_list_of_exchanges()
+    print(resp)
+
+    resp = api.get_list_of_tickers(delisted = 1, code = 'US')
+    print(resp)
+
+    resp = api.symbol_change_history(from_date = '2020-01-05', to_date = '2020-02-10')
+    print(resp)
+
     
 
 if __name__ == "__main__":
