@@ -373,7 +373,7 @@ class APIClient:
                 All possible values for function parameter: 
                                         ['avgvol', 'avgvolccy', 'sma', 'ema', 'wma', 'volatility', 'stochastic',
                                         'rsi', 'stddev', 'stochrsi', 'slope', 'dmi', 'adx', 'macd', 'atr',
-                                        'cci', 'sar', 'bbands', 'format_amibroker']
+                                        'cci', 'sar', 'bbands', 'format_amibroker', 'splitadjusted']
                 Description for possible functions you get here: 
                 https://eodhistoricaldata.com/financial-apis/technical-indicators-api/
             period – the number of data points used to calculate each moving average value. 
