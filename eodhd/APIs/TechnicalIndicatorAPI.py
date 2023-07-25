@@ -6,7 +6,7 @@ class TechnicalIndicatorAPI(BaseAPI):
 
     possible_functions = ['avgvol', 'avgvolccy', 'sma', 'ema', 'wma', 'volatility', 'stochastic',
                         'rsi', 'stddev', 'stochrsi', 'slope', 'dmi', 'adx', 'macd', 'atr',
-                        'cci', 'sar', 'bbands', 'format_amibroker']
+                        'cci', 'sar', 'bbands', 'format_amibroker', 'splitadjusted']
 
     def get_technical_indicator_data(self, api_token: str, ticker: str, function: str, period: int = 50,
                                      date_from: str = None, date_to: str = None, order: str = 'a', 
