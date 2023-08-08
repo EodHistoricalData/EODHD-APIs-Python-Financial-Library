@@ -394,14 +394,17 @@ class APIClient:
                                                      order = order, splitadjusted_only = splitadjusted_only)
     
 
-    def get_live_stock_prices(self, ticker, date_to = None, date_from = None) -> list:
+    def get_live_stock_prices(self, ticker, date_to = None, date_from = None, s = None) -> list:
         """Available args:
             ticker (required) - consists of two parts: [SYMBOL_NAME].[EXCHANGE_ID]. Example: AAPL.US
+            s (not required) - add “s=” parameter to your function and you will be able to get data for multiple 
+                tickers at one request, all tickers should be separated with a comma. For example:
+                api.get_live_stock_prices(ticker = "AAPL.US", s="VTI,EUR.FOREX")
             For more information visit: https://eodhistoricaldata.com/financial-apis/live-realtime-stocks-api/
             """
 
         api_call = LiveStockPricesAPI()
-        return api_call.get_live_stock_prices(api_token = self._api_key, ticker = ticker)
+        return api_call.get_live_stock_prices(api_token = self._api_key, ticker = ticker, s = s)
     
     
     def get_economic_events_data(self, date_from: str = None, date_to: str = None,
