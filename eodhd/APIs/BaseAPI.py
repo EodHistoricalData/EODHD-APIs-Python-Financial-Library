@@ -9,7 +9,7 @@ from rich.console import Console
 class BaseAPI:
 
     def __init__(self) -> None:
-        self._api_url = "https://eodhistoricaldata.com/api"
+        self._api_url = "https://eodhd.com/api"
         self.console = Console()
 
 

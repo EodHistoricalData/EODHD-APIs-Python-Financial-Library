@@ -84,7 +84,7 @@ class APIClient:
             raise ValueError("API key is invalid")
 
         self._api_key = api_key
-        self._api_url = "https://eodhistoricaldata.com/api"
+        self._api_url = "https://eodhd.com/api"
 
         self.console = Console()
 
@@ -584,7 +584,7 @@ class APIClient:
     
     def get_details_trading_hours_stock_market_holidays(self, code, from_date = None, to_date = None):
         """Available args:
-            Use the exchange code from the API endpoint above.
+            Use the exchange code from the API endpoint.
         For more information visit: https://eodhistoricaldata.com/financial-apis/exchanges-api-trading-hours-and-stock-market-holidays/
             """
         
