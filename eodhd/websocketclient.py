@@ -92,7 +92,7 @@ class WebSocketClient():
         """Connect to websocket"""
 
         self.websocket = create_connection(
-            f"wss://ws.eodhistoricaldata.com/ws/{self._endpoint}?api_token={self._api_key}"
+            f"wss://ws.eodhd.com/ws/{self._endpoint}?api_token={self._api_key}"
         )
         self.websocket.send(
             json.dumps(

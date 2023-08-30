@@ -1,5 +1,5 @@
 # Official EODHD APIs Python Library
-https://eodhistoricaldata.com
+https://eodhd.com
 
 ## Installation
 
@@ -8,7 +8,7 @@ https://eodhistoricaldata.com
 ## Note
 
 Demo API key below is provided by EOD Historial Data for testing purposes
-<https://eodhistoricaldata.com/financial-apis/new-real-time-data-api-websockets?utm_source=github&utm_medium=eod&utm_campaign=python_lib>
+<https://eodhd.com/financial-apis/new-real-time-data-api-websockets?utm_source=github&utm_medium=eod&utm_campaign=python_lib>
 
 ## Sample code and examples
 
