@@ -450,7 +450,7 @@ class APIClient:
         return api_call.get_fundamentals_data(api_token = self._api_key, ticker = ticker)
     
 
-    def get_bulk_fundamentals_data(self, country = 'US', type = None, date = None,
+    def get_eod_splits_dividends_data(self, country = 'US', type = None, date = None,
                                    symbols = None, filter = None) -> list:
         """Available args:
             type (not required) - can get splits, empty or dividends. 
@@ -466,8 +466,8 @@ class APIClient:
             For more information visit: https://eodhistoricaldata.com/financial-apis/bulk-api-eod-splits-dividends/
             """
 
-        api_call = BulkFundamentalDataAPI()
-        return api_call.get_bulk_fundamentals_data(api_token = self._api_key, country = country, type = type,
+        api_call = BulkEodSplitsDividendsDataAPI()
+        return api_call.get_eod_splits_dividends_data(api_token = self._api_key, country = country, type = type,
                                                    date = date, symbols = symbols, filter = filter)
     
 
@@ -542,22 +542,6 @@ class APIClient:
         
         api_call = BondsFundamentalsAPI()
         return api_call.get_bonds_fundamentals_data(api_token = self._api_key, isin = isin)
-    
-    def exchange_EOD(self, country = 'US', date = None, symbols = None, filter = None) -> list:
-        """Available args:
-            Returns end-of-day data for US stocks in bulk for a particular day. 
-            date (not required) - By default, the data for last trading day will be downloaded, but if you need any specific date
-                you can add parameter
-            symbols (not required) - To download last day data for several symbols, for example, 
-                for MSFT and AAPL, you can add the ‘symbols’ parameter. For non-US tickers, 
-                you should use the exchange code, for example, BMW.XETRA or SAP.F
-                If you want get data for several codes you need to input in the next type of format: AAPL,BMW.XETRA,SAP.F
-            API limits 100 000 requests per day
-            For more information visit: https://eodhistoricaldata.com/financial-apis/bulk-api-eod-splits-dividends/
-            """
-
-        api_call = BulkforEODSplitsDividendsAPI()
-        return api_call.exchange_EOD(api_token = self._api_key, country = country, date = date, symbols = symbols, filter = filter)
     
     
     def get_list_of_exchanges(self):

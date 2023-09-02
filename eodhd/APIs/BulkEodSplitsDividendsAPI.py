@@ -1,8 +1,8 @@
 from .BaseAPI import BaseAPI
 
-class BulkFundamentalDataAPI(BaseAPI):
+class BulkEodSplitsDividendsDataAPI(BaseAPI):
 
-    def get_bulk_fundamentals_data(self, api_token: str, country = 'US', type = None, date = None,
+    def get_eod_splits_dividends_data(self, api_token: str, country = 'US', type = None, date = None,
                                    symbols = None, filter = None):
         
         endpoint = 'eod-bulk-last-day'
