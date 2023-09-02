@@ -5,14 +5,13 @@ from .LiveStockPricesAPI import LiveStockPricesAPI
 from .EconomicEventsDataAPI import EconomicEventsDataAPI
 from .InsiderTransactionsAPI import InsiderTransactionsAPI
 from .FundamentalDataAPI import FundamentalDataAPI
-from .BulkFundamentalDataAPI import BulkFundamentalDataAPI
+from .BulkEodSplitsDividendsAPI import BulkEodSplitsDividendsDataAPI
 from .UpcomingEarningsAPI import UpcomgingEarningsAPI
 from .EarningTrendsAPI import EarningTrendsAPI
 from .UpcomingIPOsAPI import UpcomingIPOsAPI
 from .UpcomingSplitsAPI import UpcomingSplitsAPI
 from .MacroIndicatorsAPI import MacroIndicatorsAPI
 from .BondsFundamentalsAPI import BondsFundamentalsAPI
-from .Bulk_for_EOD_Splits_DividendsAPI import BulkforEODSplitsDividendsAPI
 from .ListOfExchangesAPI import ListOfExchangesAPI
 from .TradingHours_StockMarketHolidays_SymbolsChangeHistory import TradingHours_StockMarketHolidays_SymbolsChangeHistoryAPI
 from .StockMarketScreenerAPI import StockMarketScreenerAPI
