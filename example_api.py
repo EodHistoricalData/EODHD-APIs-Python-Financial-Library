@@ -61,12 +61,8 @@ def main() -> None:
     resp = api.get_bonds_fundamentals_data(isin = 'DE000CB83CF0')
     print(resp)
 
-    resp = api.exchange_EOD(country = 'US', date = '2010-09-21', symbols = 'MSFT', filter = 'extended')
-    # resp = api.exchange_EOD(country = 'US', date = '2010-09-21', symbols = 'MSFT, AAPL, BMW.XETRA, SAP.F', filter = 'extended')
-    print(resp)
-
-    resp = api.get_bulk_fundamentals_data(country = 'US', type = 'splits', date = '2010-09-21', symbols = 'MSFT', filter = 'extended')
-    # resp = api.get_bulk_fundamentals_data(country = 'US', type = 'dividends', date = '2010-09-21', symbols = 'MSFT', filter = 'extended')
+    resp = api.get_eod_splits_dividends_data(country = 'US', type = 'splits', date = '2010-09-21', symbols = 'MSFT', filter = 'extended')
+    # resp = api.get_eod_splits_dividends_data(country = 'US', type = 'dividends', date = '2010-09-21', symbols = 'MSFT', filter = 'extended')
     print(resp)
 
     resp = api.get_earning_trends_data(symbols = 'AAPL.US')
