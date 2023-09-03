@@ -111,8 +111,6 @@ class APIClient:
             raise ValueError("endpoint is empty!")
 
         try:
-            # DEBUG
-            print(f"{self._api_url}/{endpoint}/{uri}?api_token={self._api_key}&fmt=json{querystring}")
             resp = requests_get(f"{self._api_url}/{endpoint}/{uri}?api_token={self._api_key}&fmt=json{querystring}")
 
             if resp.status_code != 200:
@@ -186,12 +184,6 @@ class APIClient:
         if symbol.count(".") == 2:
             symbol = symbol.replace(".", "-", 1)
 
-        minutes = 1
-        if interval == "5m":
-            minutes = 5
-        elif interval == "1h":
-            minutes = 60
-
         # validate interval
         try:
             Interval(interval)
@@ -245,6 +237,70 @@ class APIClient:
 
             df_data = self._rest_get("eod", symbol, f"&period={interval}&from={str(date_from)}&to={str(date_to)}")
 
+            if len(df_data) == 0:
+                columns_eod = [
+                    "symbol",
+                    "interval",
+                    "open",
+                    "high",
+                    "low",
+                    "close",
+                    "adjusted_close",
+                    "volume",
+                ]
+                return pd.DataFrame(columns=columns_eod)
+
+            if iso8601_start == "" and iso8601_end == "":
+                df_data = df_data.tail(results)
+            elif iso8601_start != "" and iso8601_end == "":
+                df_data = df_data.head(results)
+
+            df_data["symbol"] = symbol
+            df_data["interval"] = interval
+
+            # convert dataframe to a time series
+            if interval == "d" or interval == "w" or interval == "m":
+                tsidx = pd.DatetimeIndex(pd.to_datetime(df_data["date"]).dt.strftime("%Y-%m-%d"))
+                df_data.set_index(tsidx, inplace=True)
+                df_data = df_data.drop(columns=["date"])
+            else:
+                tsidx = pd.DatetimeIndex(pd.to_datetime(df_data["datetime"]).dt.strftime("%Y-%m-%d %H:%M:%S"))
+                df_data.set_index(tsidx, inplace=True)
+                df_data = df_data.drop(columns=["datetime"])
+
+            df_data.columns = [
+                "open",
+                "high",
+                "low",
+                "close",
+                "adjusted_close",
+                "volume",
+                "symbol",
+                "interval",
+            ]
+
+            # set object type to display large floats
+            df_data.fillna(0, inplace=True)
+            df_data["open"] = df_data["open"].astype(object)
+            df_data["high"] = df_data["high"].astype(object)
+            df_data["low"] = df_data["low"].astype(object)
+            df_data["close"] = df_data["close"].astype(object)
+            df_data["adjusted_close"] = df_data["adjusted_close"].astype(object)
+            df_data["volume"] = df_data["volume"].astype(object)
+
+            return df_data[
+                [
+                    "symbol",
+                    "interval",
+                    "open",
+                    "high",
+                    "low",
+                    "close",
+                    "adjusted_close",
+                    "volume",
+                ]
+            ]
+
         elif interval == "1m" or interval == "5m" or interval == "1h":
             # api expects date in yyyy-mm-dd format
 
@@ -289,89 +345,7 @@ class APIClient:
                     self.console.log("invalid start date (yyyy-mm-ddThh-mm-ss OR yyyy-mm-dd OR nnnnnnnnnn):", iso8601_start)
                     sys.exit()
 
-            # DEBUG
-            print(datetime.fromtimestamp(int(date_from)), datetime.fromtimestamp(int(date_to)))
-            df_data = self._rest_get("intraday", symbol, f"&period={interval}&from={str(date_from)}&to={str(date_to)}")
-
-        else:
-            self.console.log("invalid interval (1m, 5m, 1h, 1d, w, m):", iso8601_start)
-            sys.exit()
-
-        print(df_data)
-        sys.exit()
-
-        if interval == "1d" or interval == "w" or interval == "m":
-            prog = re_compile(r"^\d{4}\-\d{2}-\d{2}$")
-
-            if iso8601_end == "" or (iso8601_end != "" and not prog.match(iso8601_end)):
-                date_to = datetime.today().date()
-            else:
-                try:
-                    date_to = datetime.strptime(iso8601_end, "%Y-%m-%d").date()
-                except ValueError:
-                    self.console.log("invalid end date (yyyy-mm-dd):", iso8601_end)
-                    sys.exit()
-
-            if iso8601_start == "" or (iso8601_start != "" and not prog.match(iso8601_start)):
-                date_from = date_to - timedelta(days=(results - 1))
-            else:
-                try:
-                    date_from = datetime.strptime(iso8601_start, "%Y-%m-%d").date()
-                except ValueError:
-                    self.console.log("invalid start date (yyyy-mm-dd):", iso8601_start)
-                    sys.exit()
-
-            if interval == "1d":
-                df_data = self._rest_get(
-                    "eod",
-                    symbol,
-                    f"&interval={interval}&from={str(date_from)}&to={str(date_to)}",
-                )
-            elif interval == "w":
-                df_data = self._rest_get("eod", symbol, f"&period=w&from={str(date_from)}&to={str(date_to)}")
-            elif interval == "m":
-                df_data = self._rest_get("eod", symbol, f"&period=m&from={str(date_from)}&to={str(date_to)}")
-        else:
-            prog = re_compile(r"^\d{4}\-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$")
-
-            if iso8601_end == "" or (iso8601_end != "" and not prog.match(iso8601_end)):
-                epoch_to = ""
-            else:
-                try:
-                    epoch_to = int(datetime.strptime(iso8601_end, "%Y-%m-%d %H:%M:%S").timestamp())
-                except ValueError:
-                    self.console.log("invalid end date (yyyy-mm-dd hh:mm:ss):", iso8601_end)
-                    sys.exit()
-
-            if iso8601_start == "" or (iso8601_start != "" and not prog.match(iso8601_start)):
-                if interval == "1m":
-                    epoch_from = str(DateUtils.str2epoch(str(datetime.now() - timedelta(days=1)).split(".")[0]))
-                elif interval == "5m":
-                    epoch_from = str(DateUtils.str2epoch(str(datetime.now() - timedelta(days=2)).split(".")[0]))
-                elif interval == "1h":
-                    epoch_from = str(DateUtils.str2epoch(str(datetime.now() - timedelta(days=14)).split(".")[0]))
-                else:
-                    epoch_from = str(int(epoch_to) - (((60 * minutes) * results) - ((60 * minutes) + 1)))
-            else:
-                try:
-                    epoch_from = int(datetime.strptime(iso8601_start, "%Y-%m-%d %H:%M:%S").timestamp())
-                except ValueError:
-                    self.console.log("invalid start date (yyyy-mm-dd hh:mm:ss):", iso8601_start)
-                    sys.exit()
-
-            if epoch_to != "":
-                df_data = self._rest_get(
-                    "intraday",
-                    symbol,
-                    f"&interval={interval}&from={str(epoch_from)}&to={str(epoch_to)}",
-                )
-
-            else:
-                df_data = self._rest_get(
-                    "intraday",
-                    symbol,
-                    f"&interval={interval}&from={str(epoch_from)}",
-                )
+            df_data = self._rest_get("intraday", symbol, f"&interval={interval}&from={str(date_from)}&to={str(date_to)}")
 
             if len(df_data) == 0:
                 columns_eod = [
@@ -391,21 +365,19 @@ class APIClient:
             elif iso8601_start != "" and iso8601_end == "":
                 df_data = df_data.head(results)
 
-        df_data["symbol"] = symbol
-        df_data["interval"] = interval
+            df_data["symbol"] = symbol
+            df_data["interval"] = interval
 
-        # convert dataframe to a time series
-        if interval == "1d" or interval == "w" or interval == "m":
-            tsidx = pd.DatetimeIndex(pd.to_datetime(df_data["date"]).dt.strftime("%Y-%m-%d"))
-            df_data.set_index(tsidx, inplace=True)
-            df_data = df_data.drop(columns=["date"])
-        else:
-            tsidx = pd.DatetimeIndex(pd.to_datetime(df_data["datetime"]).dt.strftime("%Y-%m-%d %H:%M:%S"))
-            df_data.set_index(tsidx, inplace=True)
-            df_data = df_data.drop(columns=["datetime"])
+            # convert dataframe to a time series
+            if interval == "d" or interval == "w" or interval == "m":
+                tsidx = pd.DatetimeIndex(pd.to_datetime(df_data["date"]).dt.strftime("%Y-%m-%d"))
+                df_data.set_index(tsidx, inplace=True)
+                df_data = df_data.drop(columns=["date"])
+            else:
+                tsidx = pd.DatetimeIndex(pd.to_datetime(df_data["datetime"]).dt.strftime("%Y-%m-%d %H:%M:%S"))
+                df_data.set_index(tsidx, inplace=True)
+                df_data = df_data.drop(columns=["datetime"])
 
-        # rename columns
-        if interval != "1d" and interval != "w" and interval != "m":
             df_data.columns = [
                 "epoch",
                 "gmtoffset",
@@ -418,47 +390,33 @@ class APIClient:
                 "interval",
             ]
 
-        # return dataset
-        if interval == "1d" or interval == "w" or interval == "m":
-            df_data["adjusted_close"] = df_data["adjusted_close"].astype(object)
+            # set object type to display large floats
             df_data.fillna(0, inplace=True)
+            df_data["gmtoffset"] = df_data["gmtoffset"].astype(object)
+            df_data["epoch"] = df_data["epoch"].astype(object)
+            df_data["open"] = df_data["open"].astype(object)
+            df_data["high"] = df_data["high"].astype(object)
+            df_data["low"] = df_data["low"].astype(object)
+            df_data["close"] = df_data["close"].astype(object)
+            df_data["volume"] = df_data["volume"].astype(object)
 
             return df_data[
                 [
+                    "epoch",
+                    "gmtoffset",
                     "symbol",
                     "interval",
                     "open",
                     "high",
                     "low",
                     "close",
-                    "adjusted_close",
                     "volume",
                 ]
             ]
 
-        # set object type to display large floats
-        df_data.fillna(0, inplace=True)
-        df_data["gmtoffset"] = df_data["gmtoffset"].astype(object)
-        df_data["epoch"] = df_data["epoch"].astype(object)
-        df_data["open"] = df_data["open"].astype(object)
-        df_data["high"] = df_data["high"].astype(object)
-        df_data["low"] = df_data["low"].astype(object)
-        df_data["close"] = df_data["close"].astype(object)
-        df_data["volume"] = df_data["volume"].astype(object)
-
-        return df_data[
-            [
-                "epoch",
-                "gmtoffset",
-                "symbol",
-                "interval",
-                "open",
-                "high",
-                "low",
-                "close",
-                "volume",
-            ]
-        ]
+        else:
+            self.console.log("invalid interval (1m, 5m, 1h, 1d, w, m):", iso8601_start)
+            sys.exit()
 
     def get_historical_dividends_data(self, ticker, date_to=None, date_from=None) -> list:
         """Available args:
