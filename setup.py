@@ -16,7 +16,7 @@ with open(path.join(HERE, "README.md"), encoding="utf-8") as f:
 # This call to setup() does all the work
 setup(
     name="eodhd",
-    version="1.0.20",
+    version="1.0.21",
     description="Official EODHD API Python Library",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -28,7 +28,7 @@ setup(
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.11",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(include=["eodhd"]) + ['eodhd.APIs'],
@@ -40,6 +40,7 @@ setup(
         "rich==12.5.1",
         "pandas==2.0.3",
         "numpy==1.21.6",
+        "matplotlib==3.3.3",
     ],
     entry_points={
         "console_scripts": [
