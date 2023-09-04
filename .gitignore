@@ -133,3 +133,6 @@ dmypy.json
 
 config.py
 *.csv
+
+# Sandbox file for testing
+sandbox.py
