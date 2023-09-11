@@ -16,7 +16,7 @@ with open(path.join(HERE, "README.md"), encoding="utf-8") as f:
 # This call to setup() does all the work
 setup(
     name="eodhd",
-    version="1.0.21",
+    version="1.0.22",
     description="Official EODHD API Python Library",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -34,13 +34,13 @@ setup(
     packages=find_packages(include=["eodhd"]) + ['eodhd.APIs'],
     include_package_data=True,
     install_requires=[
-        "websockets==10.3",
-        "websocket-client==1.3.3",
-        "requests==2.28.1",
-        "rich==12.5.1",
-        "pandas==2.0.3",
-        "numpy==1.21.6",
-        "matplotlib==3.3.3",
+        "websockets>=11.0.3",
+        "websocket-client>=1.6.3",
+        "requests>=2.31.0",
+        "rich>=13.5.2",
+        "pandas>=2.1.0",
+        "numpy>=1.25.2",
+        "matplotlib>=3.7.2",
     ],
     entry_points={
         "console_scripts": [
@@ -48,6 +48,6 @@ setup(
         ]
     },
     setup_requires=["pytest-runner==6.0.0"],
-    tests_require=["pytest==7.1.2"],
+    tests_require=["pytest==7.4.2"],
     test_suite="tests",
 )
