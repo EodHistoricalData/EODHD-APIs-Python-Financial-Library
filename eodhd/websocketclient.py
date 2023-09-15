@@ -59,7 +59,9 @@ class WebSocketClient:
     def _signal_handler(self, signum, frame):
         print("Stopping websocket...")
         self.running = False
-        self.stop()
+        self.stop_event.set()
+        self.thread.join()
+        print("Websocket stopped.")
 
     def _collect_data(self):
         self.ws = websocket.create_connection(f"wss://ws.eodhistoricaldata.com/ws/{self._endpoint}?api_token={self._api_key}")
