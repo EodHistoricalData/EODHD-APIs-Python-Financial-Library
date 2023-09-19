@@ -3,7 +3,7 @@ https://eodhd.com
 
 ## Installation
 
-    python3 -m pip install eodhd
+    python3 -m pip install eodhd -U
 
 ## Note
 

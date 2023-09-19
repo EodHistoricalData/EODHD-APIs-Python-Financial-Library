@@ -1,33 +1,33 @@
-"""websocketclient.py"""
-
-import re
+import websocket
+import threading
+import signal
+import time
 import json
-from time import sleep
-from datetime import datetime
-from threading import Thread
-from websocket import create_connection, WebSocketConnectionClosedException
+import re
+import pandas as pd
 
-class WebSocketClient():
-    """WebSocket class"""
+pd.set_option('display.float_format', '{:.8f}'.format)
 
-    # pylint: disable=too-many-instance-attributes
-    # Eleven is reasonable in this case
 
+class WebSocketClient:
     def __init__(
         self,
         api_key: str,
         endpoint: str,
         symbols: list,
+        store_data: bool = False,
+        display_stream: bool = False,
+        display_candle_1m: bool = False,
+        display_candle_5m: bool = False,
+        display_candle_1h: bool = False,
     ) -> None:
-        super().__init__()
-
         # Validate API key
         prog = re.compile(r"^[A-z0-9.]{16,32}$")
         if not prog.match(api_key):
             raise ValueError("API key is invalid")
 
         # Validate endpoint
-        if endpoint not in ["us","us_quote","forex","crypto"]:
+        if endpoint not in ["us", "us_quote", "forex", "crypto"]:
             raise ValueError("Endpoint is invalid")
 
         # Validate symbol list
@@ -48,167 +48,239 @@ class WebSocketClient():
         self._api_key = api_key
         self._endpoint = endpoint
         self._symbols = symbols
+        self._store_data = store_data
+        self._display_stream = display_stream
+        self._display_candle_1m = display_candle_1m
+        self._display_candle_5m = display_candle_5m
+        self._display_candle_1h = display_candle_1h
 
-        # Statistical variables
-        self.start_time = None
-        self.time_elapsed = 0
-        self.message_count = 0
-
-        # WebSocket variables
-        self.stop = None
-        self.thread = None
-        self.keepalive = None
-        self.websocket = None
+        self.running = True
         self.message = None
+        self.stop_event = threading.Event()
+        self.data_list = []
+        self.ws = None
 
-    # Public functions
+        # Register signal handlers
+        signal.signal(signal.SIGINT, self._signal_handler)
+        signal.signal(signal.SIGTERM, self._signal_handler)
 
-    def start(self):
-        """Initialise websocket"""
-
-        def _go():
-            self._connect()
-            self._listen()
-            self._disconnect()
-
-        self.stop = False
-        self.on_open()
-        self.thread = Thread(target=_go)
-        self.keepalive = Thread(target=self._keepalive)
-        self.thread.start()
-
-    def close(self):
-        """Close websocket"""
-
-        self.stop = True
-        self.start_time = None
-        self.time_elapsed = 0
-        self._disconnect()
+    def _signal_handler(self, signum, frame):
+        print("Stopping websocket...")
+        self.running = False
+        self.stop_event.set()
         self.thread.join()
+        print("Websocket stopped.")
 
-    # Private functions
+    def _floor_to_nearest_interval(self, timestamp_ms, interval):
+        # Convert to seconds
+        timestamp_s = timestamp_ms // 1000
 
-    def _connect(self):
-        """Connect to websocket"""
+        # Define the number of seconds for each interval
+        seconds_per_minute = 60
+        seconds_per_hour = seconds_per_minute * 60
 
-        self.websocket = create_connection(
-            f"wss://ws.eodhd.com/ws/{self._endpoint}?api_token={self._api_key}"
-        )
-        self.websocket.send(
-            json.dumps(
-                {
-                    "action": "subscribe",
-                    "symbols": ",".join(self._symbols),
-                }
-            )
-        )
-        self.start_time = datetime.now()
+        # Determine the number of seconds for the given interval
+        if interval == "1 minute":
+            interval_seconds = seconds_per_minute
+        elif interval == "5 minutes":
+            interval_seconds = 5 * seconds_per_minute
+        elif interval == "1 hour":
+            interval_seconds = seconds_per_hour
+        else:
+            raise ValueError(f"Unsupported interval: {interval}")
 
-    def _listen(self):
-        """Listen to websocket"""
+        # Floor to the nearest interval
+        floored_s = (timestamp_s // interval_seconds) * interval_seconds
 
-        self.keepalive.start()
-        while not self.stop:
-            try:
-                data = self.websocket.recv()
-                if data != "":
-                    msg = json.loads(data)
-                else:
-                    msg = {}
-            except ValueError as error_msg:
-                self.on_error(error_msg)
-            except Exception as error_msg: # pylint: disable=broad-except
-                self.on_error(error_msg)
-            else:
-                self.on_message(msg)
+        # Convert back to milliseconds
+        floored_ms = floored_s * 1000
+
+        return floored_ms
+
+    def _collect_data(self):
+        self.ws = websocket.create_connection(f"wss://ws.eodhistoricaldata.com/ws/{self._endpoint}?api_token={self._api_key}")
+
+        # Send the subscription message
+        payload = {
+            "action": "subscribe",
+            "symbols": ",".join(self._symbols),
+        }
+        self.ws.send(json.dumps(payload))
+
+        candle_1m = {}
+        candle_5m = {}
+        candle_1h = {}
+
+        # Collect data until the stop event is set
+        while not self.stop_event.is_set():
+            self.message = self.ws.recv()
+            message_json = json.loads(self.message)
+
+            if self._store_data:
+                self.data_list.append(self.message)
+
+            if self._display_stream:
+                print(self.message)
+
+            if self._display_candle_1m:
+                if "t" in message_json:
+                    candle_date = self._floor_to_nearest_interval(message_json["t"], "1 minute")
+
+                    if "t" in candle_1m and (candle_date != candle_1m["t"]):
+                        print(candle_1m)
+
+                        # New candle
+                        candle_1m = {}
+
+                    candle_1m["t"] = candle_date
+
+                if "s" in message_json:
+                    candle_1m["m"] = message_json["s"]
+                    candle_1m["g"] = 60
+
+                if "p" in message_json and "o" not in candle_1m:
+                    # Forming candle
+                    candle_1m["o"] = message_json["p"]
+                    candle_1m["h"] = message_json["p"]
+                    candle_1m["l"] = message_json["p"]
+                    candle_1m["c"] = message_json["p"]
+                    if "q" in message_json:
+                        candle_1m["v"] = float(message_json["q"])
+                elif "p" in message_json and "o" in candle_1m:
+                    # Update candle
+                    candle_1m["c"] = message_json["p"]
+
+                    if message_json["p"] > candle_1m["h"]:
+                        candle_1m["h"] = message_json["p"]
+
+                    if message_json["p"] < candle_1m["l"]:
+                        candle_1m["l"] = message_json["p"]
+
+                    # Sum volume
+                    candle_1m["v"] += float(message_json["q"])
+
+                # Uncomment this to see the candle forming
+                # print(candle_1m)
+
+            if self._display_candle_5m:
+                if "t" in message_json:
+                    candle_date = self._floor_to_nearest_interval(message_json["t"], "5 minutes")
+
+                    if "t" in candle_5m and (candle_date != candle_5m["t"]):
+                        print(candle_5m)
+
+                        # New candle
+                        candle_5m = {}
+
+                    candle_5m["t"] = candle_date
+
+                if "s" in message_json:
+                    candle_5m["m"] = message_json["s"]
+                    candle_5m["g"] = 60
+
+                if "p" in message_json and "o" not in candle_5m:
+                    # Forming candle
+                    candle_5m["o"] = message_json["p"]
+                    candle_5m["h"] = message_json["p"]
+                    candle_5m["l"] = message_json["p"]
+                    candle_5m["c"] = message_json["p"]
+                    if "q" in message_json:
+                        candle_5m["v"] = float(message_json["q"])
+                elif "p" in message_json and "o" in candle_5m:
+                    # Update candle
+                    candle_5m["c"] = message_json["p"]
+
+                    if message_json["p"] > candle_5m["h"]:
+                        candle_5m["h"] = message_json["p"]
+
+                    if message_json["p"] < candle_5m["l"]:
+                        candle_5m["l"] = message_json["p"]
+
+                    # Sum volume
+                    candle_5m["v"] += float(message_json["q"])
+
+                # Uncomment this to see the candle forming
+                # print(candle_5m)
+
+            if self._display_candle_1h:
+                if "t" in message_json:
+                    candle_date = self._floor_to_nearest_interval(message_json["t"], "1 hour")
+
+                    if "t" in candle_1h and (candle_date != candle_1h["t"]):
+                        print(candle_1h)
+
+                        # New candle
+                        candle_1h = {}
+
+                    candle_1h["t"] = candle_date
+
+                if "s" in message_json:
+                    candle_1h["m"] = message_json["s"]
+                    candle_1h["g"] = 60
+
+                if "p" in message_json and "o" not in candle_1h:
+                    # Forming candle
+                    candle_1h["o"] = message_json["p"]
+                    candle_1h["h"] = message_json["p"]
+                    candle_1h["l"] = message_json["p"]
+                    candle_1h["c"] = message_json["p"]
+                    if "q" in message_json:
+                        candle_1h["v"] = float(message_json["q"])
+                elif "p" in message_json and "o" in candle_1h:
+                    # Update candle
+                    candle_1h["c"] = message_json["p"]
+
+                    if message_json["p"] > candle_1h["h"]:
+                        candle_1h["h"] = message_json["p"]
+
+                    if message_json["p"] < candle_1h["l"]:
+                        candle_1h["l"] = message_json["p"]
+
+                    # Sum volume
+                    candle_1h["v"] += float(message_json["q"])
+
+                # Uncomment this to see the candle forming
+                # print(candle_1h)
+
+        # Close the WebSocket connection
+        self.ws.close()
 
     def _keepalive(self, interval=30):
-        """WebSocket keepalive"""
+        if (self.ws is not None) and (hasattr(self.ws, "connected")):
+            while self.ws.connected:
+                self.ws.ping("keepalive")
+                time.sleep(interval)
 
-        while self.websocket.connected:
-            self.websocket.ping("keepalive")
-            sleep(interval)
+    def start(self):
+        self.thread = threading.Thread(target=self._collect_data)
+        self.keepalive = threading.Thread(target=self._keepalive)
+        self.thread.start()
+        self.keepalive.start()
 
-    def _disconnect(self):
-        """Disconnect websocket"""
+    def stop(self):
+        self.stop_event.set()
+        self.thread.join()
+        self.keepalive.join()
 
-        try:
-            if self.websocket:
-                self.websocket.close()
-        except WebSocketConnectionClosedException:
-            pass
-        finally:
-            self.keepalive.join()
+    def get_data(self):
+        return self.data_list
 
-    # Events
-
-    def on_close(self):
-        """WebSocket on-close event"""
-
-        print("-- WebSocket Closed --")
-
-    def on_error(self, error_msg, data=None):
-        """WebSocket on_error event"""
-
-        print(f"{error_msg} - data: {data}")
-
-        self.stop = True
-        try:
-            self.websocket = None
-            self.start_time = None
-            self.time_elapsed = 0
-        except: # pylint: disable=bare-except
-            pass
-
-    def on_open(self):
-        """WebSocket on-open event"""
-
-        self.message_count = 0
-
-    def on_message(self, msg):
-        """WebSocket on-message event"""
-
-        if self.start_time is not None:
-            self.time_elapsed = round(
-                (datetime.now()-self.start_time).total_seconds()
-            )
-        self.message_count += 1
-        self.message = msg
-        #print (self.message_count, msg)
-
-    # Getters
-
-    def get_start_time(self) -> datetime:
-        """Start time getter"""
-
-        return self.start_time
-
-    def get_time_elapsed(self) -> int:
-        """Time elapsed getter"""
-
-        return self.time_elapsed
-
-
-def main() -> None:
-    """Main"""
-
-    websocket = WebSocketClient(
-        # Demo API key for testing purposes
-        api_key="OeAFFmMliFG5orCUuwAKQ8l4WWFQ67YX", endpoint="crypto", symbols=["BTC-USD"]
-        #api_key="OeAFFmMliFG5orCUuwAKQ8l4WWFQ67YX", endpoint="forex", symbols=["EURUSD"]
-        #api_key="OeAFFmMliFG5orCUuwAKQ8l4WWFQ67YX", endpoint="us", symbols=["AAPL"]
-    )
-    websocket.start()
-
-    message_count = 0
-    while True:
-        if websocket:
-            if (
-                message_count != websocket.message_count
-            ):
-                print(websocket.message)
-                message_count = websocket.message_count
-                sleep(0.25)  # output every 1/4 second, websocket is realtime
 
 if __name__ == "__main__":
-    main()
+    client = WebSocketClient(
+        api_key="OeAFFmMliFG5orCUuwAKQ8l4WWFQ67YX",
+        endpoint="crypto",
+        symbols=["BTC-USD"],
+        display_stream=False,
+        display_candle_1m=True,
+        display_candle_5m=False,
+        display_candle_1h=False,
+    )
+    client.start()
+
+    try:
+        while client.running:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("\nStopping due to user request.")
+        client.stop()
