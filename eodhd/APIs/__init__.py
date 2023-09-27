@@ -17,3 +17,5 @@ from .TradingHours_StockMarketHolidays_SymbolsChangeHistory import TradingHours_
 from .StockMarketScreenerAPI import StockMarketScreenerAPI
 from .FinancialNewsAPI import FinancialNewsAPI
 from .OptionsDataAPI import OptionsDataAPI
+from .IntradayDataAPI import IntradayDataAPI
+from .EodHistoricalStockMarketDataAPI import EodHistoricalStockMarketDataAPI

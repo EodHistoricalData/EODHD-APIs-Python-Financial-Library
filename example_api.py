@@ -124,7 +124,11 @@ def main() -> None:
     resp = api.symbol_change_history(from_date = '2020-01-05', to_date = '2020-02-10')
     print(resp)
 
-    
+    resp = api.get_intraday_historical_data(symbol = 'AAPL.MX', from_unix_time = '1627896900', to_unix_time = '1630575300', interval='1h')
+    print(resp)
+
+    resp = api.get_eod_historical_stock_market_data(symbol = 'AAPL.MX', period='d', from_date = '2023-01-01', to_date = '2023-01-15', order='a')
+    print(resp)
 
 if __name__ == "__main__":
     main()
