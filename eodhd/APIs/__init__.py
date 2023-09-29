@@ -19,3 +19,4 @@ from .FinancialNewsAPI import FinancialNewsAPI
 from .OptionsDataAPI import OptionsDataAPI
 from .IntradayDataAPI import IntradayDataAPI
 from .EodHistoricalStockMarketDataAPI import EodHistoricalStockMarketDataAPI
+from .StockMarketTickDataAPI import StockMarketTickDataAPI
