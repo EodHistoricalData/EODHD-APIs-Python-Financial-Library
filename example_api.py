@@ -130,5 +130,8 @@ def main() -> None:
     resp = api.get_eod_historical_stock_market_data(symbol = 'AAPL.MX', period='d', from_date = '2023-01-01', to_date = '2023-01-15', order='a')
     print(resp)
 
+    resp = api.get_stock_market_tick_data(from_timestamp = '1627896900', to_timestamp = '1630575300', symbol = 'AAPL', limit = 1)
+    print(resp)
+
 if __name__ == "__main__":
     main()

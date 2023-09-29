@@ -36,6 +36,7 @@ from eodhd.APIs import FinancialNewsAPI
 from eodhd.APIs import OptionsDataAPI
 from eodhd.APIs import IntradayDataAPI
 from eodhd.APIs import EodHistoricalStockMarketDataAPI
+from eodhd.APIs import StockMarketTickDataAPI
 
 # minimal traceback
 sys.tracebacklimit = 1
@@ -844,6 +845,33 @@ class APIClient:
             to_date=to_date,
             from_date=from_date,
             order=order
+        )
+    
+    def get_stock_market_tick_data(
+        self,
+        symbol,
+        from_timestamp,
+        to_timestamp,
+        limit=None
+    ):
+        """
+        Available args:
+            symbol - , for example, AAPL.US, consists of two parts: {SYMBOL_NAME}.{EXCHANGE_ID}. 
+                This API works only for US exchanges for the moment, 
+                then you can use 'AAPL' or 'AAPL.US' to get the data as well for other US tickers.
+            from_timestamp and to_timestamp - use these parameters to filter data by datetime. 
+                Parameters should be passed in UNIX time with UTC timezone, 
+                for example, these values are correct: “from=1627896900&to=1630575300” and 
+                correspond to ' 2021-08-02 09:35:00 ' and ' 2021-09-02 09:35:00 '.
+            limit - the maximum number of ticks will be provided.
+        """
+        api_call = StockMarketTickDataAPI()
+        return api_call.get_stock_market_tick_data(
+            api_token=self._api_key,
+            symbol=symbol,
+            to_timestamp=to_timestamp,
+            from_timestamp=from_timestamp,
+            limit=limit
         )
 
 
