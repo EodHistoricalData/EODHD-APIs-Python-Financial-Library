@@ -156,12 +156,15 @@ class APIClient:
 
         return self._rest_get("exchanges-list")
 
-    def get_exchange_symbols(self, uri: str = "") -> pd.DataFrame:
+    def get_exchange_symbols(self, uri: str = "", delisted=False) -> pd.DataFrame:
         """Get supported exchange symbols"""
 
         try:
             if uri.strip() == "":
                 raise ValueError("endpoint uri is empty!")
+
+            if delisted:
+                return self._rest_get("exchange-symbol-list", uri, "&delisted=1")
 
             return self._rest_get("exchange-symbol-list", uri)
         except ValueError as err:
@@ -780,7 +783,7 @@ class APIClient:
             trade_date_from=trade_date_from,
             contract_name=contract_name,
         )
-    
+
     def get_intraday_historical_data(
         self,
         symbol,
@@ -792,16 +795,16 @@ class APIClient:
         IMPORTANT: data for all exchanges is provided in the UTC timezone, with Unix timestamps.
 
         Available args:
-            symbol(string): Required - consists of two parts: {SYMBOL_NAME}.{EXCHANGE_ID}, 
+            symbol(string): Required - consists of two parts: {SYMBOL_NAME}.{EXCHANGE_ID},
                 then you can use, for example, AAPL.MX for Mexican Stock Exchange. or AAPL.US for NASDAQ
             interval(string) Optional - the possible intervals: ‘5m’ for 5-minutes, ‘1h’ for 1 hour, and ‘1m’ for 1-minute intervals.
-            from_unix_time(string) and to_unix_time(string): Optional - Parameters should be passed in UNIX time with UTC timezone, for example, 
-                these values are correct: “from=1627896900&to=1630575300” and correspond to 
-                ‘ 2021-08-02 09:35:00 ‘ and ‘ 2021-09-02 09:35:00 ‘. 
-                The maximum periods between ‘from’ and ‘to’ are 120 days for 1-minute intervals, 
-                600 days for 5-minute intervals and 
-                7200 days for 1-hour intervals 
-                (please note, especially with the 1-hour interval, this is the maximum theoretically possible length). 
+            from_unix_time(string) and to_unix_time(string): Optional - Parameters should be passed in UNIX time with UTC timezone, for example,
+                these values are correct: “from=1627896900&to=1630575300” and correspond to
+                ‘ 2021-08-02 09:35:00 ‘ and ‘ 2021-09-02 09:35:00 ‘.
+                The maximum periods between ‘from’ and ‘to’ are 120 days for 1-minute intervals,
+                600 days for 5-minute intervals and
+                7200 days for 1-hour intervals
+                (please note, especially with the 1-hour interval, this is the maximum theoretically possible length).
                 Without ‘from’ and ‘to’ specified, the length of the data obtained is the last 120 days.
 
         List of supported exchanges: https://eodhd.com/financial-apis/exchanges-api-list-of-tickers-and-trading-hours/
@@ -815,7 +818,7 @@ class APIClient:
             to_unix_time=to_unix_time,
             from_unix_time=from_unix_time
         )
-    
+
     def get_eod_historical_stock_market_data(
         self,
         symbol,
@@ -826,12 +829,12 @@ class APIClient:
     ):
         """
         Available args:
-            symbol(string): Required - consists of two parts: {SYMBOL_NAME}.{EXCHANGE_ID}, 
+            symbol(string): Required - consists of two parts: {SYMBOL_NAME}.{EXCHANGE_ID},
                 then you can use, for example, AAPL.MX for Mexican Stock Exchange. or AAPL.US for NASDAQ
             period(string) Optional - use 'd' for daily, 'w' for weekly, 'm' for monthly prices. By default, daily prices will be shown.
-            from_date and to_date - the format is 'YYYY-MM-DD'. 
+            from_date and to_date - the format is 'YYYY-MM-DD'.
                 If you need data from Jan 5, 2017, to Feb 10, 2017, you should use from=2017-01-05 and to=2017-02-10.
-            order(string) Optional - use ‘a’ for ascending dates (from old to new), ‘d’ for descending dates (from new to old). 
+            order(string) Optional - use ‘a’ for ascending dates (from old to new), ‘d’ for descending dates (from new to old).
                 By default, dates are shown in ascending order.
 
         List of supported exchanges: https://eodhd.com/financial-apis/exchanges-api-list-of-tickers-and-trading-hours/
@@ -846,7 +849,7 @@ class APIClient:
             from_date=from_date,
             order=order
         )
-    
+
     def get_stock_market_tick_data(
         self,
         symbol,
@@ -856,12 +859,12 @@ class APIClient:
     ):
         """
         Available args:
-            symbol - , for example, AAPL.US, consists of two parts: {SYMBOL_NAME}.{EXCHANGE_ID}. 
-                This API works only for US exchanges for the moment, 
+            symbol - , for example, AAPL.US, consists of two parts: {SYMBOL_NAME}.{EXCHANGE_ID}.
+                This API works only for US exchanges for the moment,
                 then you can use 'AAPL' or 'AAPL.US' to get the data as well for other US tickers.
-            from_timestamp and to_timestamp - use these parameters to filter data by datetime. 
-                Parameters should be passed in UNIX time with UTC timezone, 
-                for example, these values are correct: “from=1627896900&to=1630575300” and 
+            from_timestamp and to_timestamp - use these parameters to filter data by datetime.
+                Parameters should be passed in UNIX time with UTC timezone,
+                for example, these values are correct: “from=1627896900&to=1630575300” and
                 correspond to ' 2021-08-02 09:35:00 ' and ' 2021-09-02 09:35:00 '.
             limit - the maximum number of ticks will be provided.
         """
