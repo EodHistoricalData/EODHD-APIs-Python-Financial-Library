@@ -454,6 +454,16 @@ class APIClient:
         date_to: str = None,
         order: str = "a",
         splitadjusted_only: str = "0",
+        agg_period: str = None,
+        fast_kperiod: int = None,
+        slow_kperiod: int = None,
+        slow_dperiod: int = None,
+        fast_dperiod: int = None,
+        fast_period: int = None,
+        slow_period: int = None,
+        signal_period: int = None,
+        acceleration: float = None,
+        maximum: float = None
     ) -> list:
         """Available args:
         ticker (required) - consists of two parts: [SYMBOL_NAME].[EXCHANGE_ID]. Example: AAPL.US
@@ -464,16 +474,35 @@ class APIClient:
                                     'cci', 'sar', 'bbands', 'format_amibroker', 'splitadjusted']
             Description for possible functions you get here:
             https://eodhistoricaldata.com/financial-apis/technical-indicators-api/
-        period – the number of data points used to calculate each moving average value.
-            Valid range from 2 to 100000 with the default value – 50.
+        period - the number of data points used to calculate each moving average value.
+            Valid range from 2 to 100000 with the default value - 50.
         date_from (not required) - date from with format Y-m-d. Example: 2000-01-01
         date_to (not required) - date from with format Y-m-d. Example: 2000-01-01
-        order – use ‘a’ for ascending dates (from old to new) and ‘d’ for descending dates (from new to old).
+        order - use 'a' for ascending dates (from old to new) and 'd' for descending dates (from new to old).
             By default, dates are shown in ascending order.
-        splitadjusted_only – default value is ‘0’.
+        splitadjusted_only - default value is '0'.
             By default, we calculate data for some functions by closes adjusted with splits and dividends.
-            If you need to calculate the data by closes adjusted only with splits, set this parameter to ‘1’.
+            If you need to calculate the data by closes adjusted only with splits, set this parameter to '1'.
             Works with the following functions: sma, ema, wma, volatility, rsi, slope, and macd.
+
+        For some functions can be used additional parameters:
+        1. For splitadjusted:
+            agg_period [optional] – aggregation period. Default value – 'd'. Possible values: d – daily, w – weekly, m – monthly.
+        2. For stochastic:
+            fast_kperiod [optional] – Fast K-period, the default value is 14. Valid range from 2 to 100000.
+            slow_kperiod [optional] – Slow K-period, the default value is 3. Valid range from 2 to 100000.
+            slow_dperiod [optional] – Slow D-period, the default value is 3. Valid range from 2 to 100000.
+        3. For stochrsi:
+            fast_kperiod [optional] – Fast K-period, the default value is 14. Valid range from 2 to 100000.
+            fast_dperiod [optional] – Fast D-period, the default value is 14. Valid range from 2 to 100000.
+        4. For macd:
+            fast_period [optional] – the default value is 12. Valid range from 2 to 100000.
+            slow_period [optional] – the default value is 26. Valid range from 2 to 100000.
+            signal_period [optional] – the default value is 9. Valid range from 2 to 100000.
+        5. For sar:
+            acceleration [optional] – Acceleration Factor used up to the Maximum value. Default value – 0.02.
+            maximum [optional] – Acceleration Factor Maximum value. Default value – 0.20.
+        For those functions use this parameters to set periods.
         """
 
         api_call = TechnicalIndicatorAPI()
@@ -486,6 +515,16 @@ class APIClient:
             date_to=date_to,
             order=order,
             splitadjusted_only=splitadjusted_only,
+            agg_period=agg_period,
+            fast_kperiod=fast_kperiod,
+            slow_kperiod=slow_kperiod,
+            slow_dperiod=slow_dperiod,
+            fast_dperiod=fast_dperiod,
+            fast_period=fast_period,
+            slow_period=slow_period,
+            signal_period=signal_period,
+            acceleration=acceleration,
+            maximum=maximum
         )
 
     def get_live_stock_prices(self, ticker, date_to=None, date_from=None, s=None) -> list:
