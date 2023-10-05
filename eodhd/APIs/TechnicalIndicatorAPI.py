@@ -10,7 +10,10 @@ class TechnicalIndicatorAPI(BaseAPI):
 
     def get_technical_indicator_data(self, api_token: str, ticker: str, function: str, period: int = 50,
                                      date_from: str = None, date_to: str = None, order: str = 'a', 
-                                     splitadjusted_only: str = '0'):
+                                     splitadjusted_only: str = '0', agg_period = None,
+                                     fast_kperiod = None, slow_kperiod = None, slow_dperiod = None,
+                                     fast_dperiod = None, fast_period = None, slow_period = None,
+                                     signal_period = None, acceleration = None, maximum = None):
         endpoint = 'technical/'
 
         if ticker.strip() == "" or ticker is None:
@@ -28,6 +31,41 @@ class TechnicalIndicatorAPI(BaseAPI):
             query_string += "&to=" + date_to
         if date_from is not None:
             query_string += "&from=" + date_from
+
+        if function == 'splitadjusted':
+            possible_agg_period = ['d', 'w', 'm']
+            if agg_period is not None:
+                if agg_period not in possible_agg_period:
+                    raise ValueError("agg_period must be in ['d', 'w', 'm']")
+                query_string += "&agg_period=" + agg_period
+
+        if function == 'stochastic':
+            if fast_kperiod is not None:
+                query_string += "&fast_kperiod=" + fast_kperiod
+            if slow_kperiod is not None:
+                query_string += "&slow_kperiod=" + slow_kperiod
+            if slow_dperiod is not None:
+                query_string += "&slow_dperiod=" + slow_dperiod
+
+        if function == 'stochrsi':
+            if fast_kperiod is not None:
+                query_string += "&fast_kperiod=" + fast_kperiod
+            if fast_dperiod is not None:
+                query_string += "&fast_dperiod=" + fast_dperiod
+        
+        if function == 'macd':
+            if fast_period is not None:
+                query_string += "&fast_period=" + fast_period
+            if slow_period is not None:
+                query_string += "&slow_period=" + slow_period
+            if signal_period is not None:
+                query_string += "&signal_period=" + signal_period
+
+        if function == 'sar':
+            if acceleration is not None:
+                query_string += "&acceleration=" + acceleration
+            if maximum is not None:
+                query_string += "&maximum=" + maximum 
 
         return self._rest_get_method(api_key = api_token, endpoint = endpoint, uri = ticker, querystring = query_string)
 
