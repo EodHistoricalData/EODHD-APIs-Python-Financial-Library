@@ -27,7 +27,7 @@ class WebSocketClient:
             raise ValueError("API key is invalid")
 
         # Validate endpoint
-        if endpoint not in ["us", "us_quote", "forex", "crypto"]:
+        if endpoint not in ["us", "us-quote", "forex", "crypto"]:
             raise ValueError("Endpoint is invalid")
 
         # Validate symbol list
