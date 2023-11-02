@@ -19,7 +19,7 @@ def main() -> None:
     # print(resp.dtypes)
     # print(resp.describe())
 
-    resp = api.get_historical_data("BTC-USD.CC", "1h")
+    resp = api.get_intraday_historical_data('BTC-USD.CC','1m')
     # resp = api.get_historical_data("BTC-USD.CC", "1m", "2021-11-27 23:56:00")
     # resp = api.get_historical_data("BTC-USD.CC", "1m", "2021-11-27 23:56:00", "2021-11-27 23:59:00")
     print(resp)
