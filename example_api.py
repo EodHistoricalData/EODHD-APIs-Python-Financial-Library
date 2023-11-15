@@ -75,7 +75,7 @@ def main() -> None:
     # resp = api.get_economic_events_data(date_from = '2020-01-05', date_to = '2020-02-10', country = 'AU', comparison = 'yoy', offset = 50, limit = 50)
     print(resp)
 
-    resp = api.financial_news(s = 'balance sheet', t = None, from_date = '2020-01-05', to_date = '2020-02-10', limit = 100, offset = 200)
+    resp = api.financial_news(s = 'AAPL.US', t = None, from_date = '2020-01-05', to_date = '2020-02-10', limit = 100, offset = 200)
     # resp = api.financial_news(s = None, t = 'balance sheet', from_date = '2020-01-05', to_date = '2020-02-10', limit = 100, offset = 200)
     print(resp)
 
