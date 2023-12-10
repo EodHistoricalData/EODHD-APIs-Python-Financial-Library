@@ -43,3 +43,21 @@ class FinancialNewsAPI(BaseAPI):
             query_string += '&to=' + str(to_date)
 
         return self._rest_get_method(api_key = api_token, endpoint = endpoint, querystring = query_string)
+    
+    def get_sentiment(self, api_token: str, s: str, from_date: str = None, to_date: str = None):
+
+        endpoint = 'sentiments'
+
+        query_string = ''
+
+        if s is None:
+            raise ValueError("s argument is empty. You need to add s to args")
+        
+        query_string += '&s=' + str(s)
+        
+        if from_date is not None:
+            query_string += '&from=' + str(from_date)
+        if to_date is not None:
+            query_string += '&to=' + str(to_date)
+
+        return self._rest_get_method(api_key = api_token, endpoint = endpoint, querystring = query_string)

@@ -133,5 +133,12 @@ def main() -> None:
     resp = api.get_stock_market_tick_data(from_timestamp = '1627896900', to_timestamp = '1630575300', symbol = 'AAPL', limit = 1)
     print(resp)
 
+    resp = api.get_sentiment(s = 'btc-usd.cc', from_date = '2023-01-01', to_date = '2023-01-15')
+    print(resp)
+
+    resp = api.get_historical_market_capitalization_data(ticker = 'AAPL.US', from_date = '2023-01-01', to_date = '2023-01-15')
+    print(resp)
+
+
 if __name__ == "__main__":
     main()

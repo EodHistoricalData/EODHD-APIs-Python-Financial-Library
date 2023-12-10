@@ -20,3 +20,4 @@ from .OptionsDataAPI import OptionsDataAPI
 from .IntradayDataAPI import IntradayDataAPI
 from .EodHistoricalStockMarketDataAPI import EodHistoricalStockMarketDataAPI
 from .StockMarketTickDataAPI import StockMarketTickDataAPI
+from .HistoricalMarketCapitalizationAPI import HistoricalMarketCapitalization
