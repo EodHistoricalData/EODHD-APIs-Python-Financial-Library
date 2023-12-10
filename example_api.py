@@ -19,7 +19,7 @@ def main() -> None:
     # print(resp.dtypes)
     # print(resp.describe())
 
-    resp = api.get_historical_data("BTC-USD.CC", "1h")
+    resp = api.get_intraday_historical_data('BTC-USD.CC','1m')
     # resp = api.get_historical_data("BTC-USD.CC", "1m", "2021-11-27 23:56:00")
     # resp = api.get_historical_data("BTC-USD.CC", "1m", "2021-11-27 23:56:00", "2021-11-27 23:59:00")
     print(resp)
@@ -75,7 +75,7 @@ def main() -> None:
     # resp = api.get_economic_events_data(date_from = '2020-01-05', date_to = '2020-02-10', country = 'AU', comparison = 'yoy', offset = 50, limit = 50)
     print(resp)
 
-    resp = api.financial_news(s = 'balance sheet', t = None, from_date = '2020-01-05', to_date = '2020-02-10', limit = 100, offset = 200)
+    resp = api.financial_news(s = 'AAPL.US', t = None, from_date = '2020-01-05', to_date = '2020-02-10', limit = 100, offset = 200)
     # resp = api.financial_news(s = None, t = 'balance sheet', from_date = '2020-01-05', to_date = '2020-02-10', limit = 100, offset = 200)
     print(resp)
 
