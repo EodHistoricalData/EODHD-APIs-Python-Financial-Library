@@ -8,4 +8,4 @@ from eodhd import APIs
 
 
 # Version of eodhd package
-__version__ = "1.0.27"
+__version__ = "1.0.28"

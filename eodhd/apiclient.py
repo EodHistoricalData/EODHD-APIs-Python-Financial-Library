@@ -37,6 +37,7 @@ from eodhd.APIs import OptionsDataAPI
 from eodhd.APIs import IntradayDataAPI
 from eodhd.APIs import EodHistoricalStockMarketDataAPI
 from eodhd.APIs import StockMarketTickDataAPI
+from eodhd.APIs import HistoricalMarketCapitalization
 
 # minimal traceback
 sys.tracebacklimit = 1
@@ -898,8 +899,8 @@ class APIClient:
     ):
         """
         Available args:
-            symbol - , for example, AAPL.US, consists of two parts: {SYMBOL_NAME}.{EXCHANGE_ID}.
-                This API works only for US exchanges for the moment,
+            symbol - for example, AAPL.US, consists of two parts: {SYMBOL_NAME}.{EXCHANGE_ID}. 
+                This API works only for US exchanges for the moment, 
                 then you can use 'AAPL' or 'AAPL.US' to get the data as well for other US tickers.
             from_timestamp and to_timestamp - use these parameters to filter data by datetime.
                 Parameters should be passed in UNIX time with UTC timezone,
@@ -915,7 +916,53 @@ class APIClient:
             from_timestamp=from_timestamp,
             limit=limit
         )
+    
+    def get_sentiment(
+        self,
+        s,
+        from_date=None,
+        to_date=None
+    ):
+        """
+        Available args:
+            s [REQUIRED] -  parameter to your URL and you will be able to get data for multiple tickers at one request, 
+                            all tickers should be separated with a comma.
+            from_date and to_date [NOT REQUIRED] - the format is ‘YYYY-MM-DD’. 
+                            If you need data from Jan 5, 2022 to Feb 10, 2022, you should use from=2022-01-05 and to=2022-02-10.
+            For more information visit: https://eodhd.com/financial-apis/sentimental-data-financial-api/
+            List of supported exchanges: https://eodhd.com/financial-apis/exchanges-api-list-of-tickers-and-trading-hours/
+        """
 
+        api_call = FinancialNewsAPI()
+        return api_call.get_sentiment(
+            api_token=self._api_key,
+            s=s,
+            from_date=from_date,
+            to_date=to_date
+        )
+
+    def get_historical_market_capitalization_data(
+        self,
+        ticker,
+        from_date=None,
+        to_date=None
+    ):
+        """
+        Available args:
+            ticker [REQUIRED] -  is the ticker code and it consists of two parts: {SYMBOL_NAME}.{EXCHANGE_ID}, 
+                        you can use a US ticker code with or without the exchange part (AAPL or AAPL.US)
+            from_date and to_date [NOT REQUIRED] - the format is ‘YYYY-MM-DD’. 
+                            If you need data from Jan 5, 2022 to Feb 10, 2022, you should use from=2022-01-05 and to=2022-02-10.
+            For more information visit: https://eodhd.com/financial-apis/historical-market-capitalization-api/
+        """
+
+        api_call = HistoricalMarketCapitalization()
+        return api_call.get_historical_market_capitalization_data(
+            api_token=self._api_key,
+            ticker=ticker,
+            from_date=from_date,
+            to_date=to_date
+        )
 
 class ScannerClient:
     """Scanner class"""
