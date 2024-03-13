@@ -710,7 +710,7 @@ class APIClient:
         api_call = ListOfExchangesAPI()
         return api_call.get_list_of_exchanges(api_token=self._api_key)
 
-    def get_list_of_tickers(self, code, delisted=1):
+    def get_list_of_tickers(self, code, delisted=0):
         """Available args:
         delisted (not required) - by default, this API provides only tickers that were active at least a month ago,
             to get the list of inactive (delisted) tickers please use the parameter “delisted=1”
