@@ -330,7 +330,8 @@ class APIClient:
                 except ValueError:
                     self.console.log("invalid end date (yyyy-mm-ddThh-mm-ss OR yyyy-mm-dd OR nnnnnnnnnn):", iso8601_end)
                     sys.exit()
-
+            
+            LIMIT_FOR_1M = 120 # Limit for 1m interval
             if iso8601_start == "" or ((iso8601_start != "" and not re_iso8601.match(iso8601_start)) and (iso8601_start != "" and not re_date_only.match(iso8601_start))):
                 if interval == "d":
                     date_from = str(int((datetime.fromtimestamp(int(date_to)) - timedelta(days=(results - 1))).timestamp()))
@@ -339,7 +340,7 @@ class APIClient:
                 elif interval == "m":
                     date_from = str(int((datetime.fromtimestamp(int(date_to)) - timedelta(months=(results - 1))).timestamp()))
                 else:
-                    date_from = str(int((datetime.fromtimestamp(int(date_to)) - timedelta(days=(results - 1))).timestamp()))
+                    date_from = str(int((datetime.fromtimestamp(int(date_to)) - timedelta(days=(LIMIT_FOR_1M))).timestamp()))
             else:
                 try:
                     if re_date_only.match(iso8601_start):
