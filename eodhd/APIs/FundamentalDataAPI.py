@@ -4,7 +4,7 @@ class FundamentalDataAPI(BaseAPI):
 
     def get_fundamentals_data(self, api_token: str, ticker: str):
         
-        endpoint = 'fundamentals/'
+        endpoint = 'fundamentals'
 
         if ticker.strip() == "" or ticker is None:
             raise ValueError("Ticker is empty. You need to add ticker to args")

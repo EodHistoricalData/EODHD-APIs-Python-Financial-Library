@@ -4,7 +4,7 @@ class LiveStockPricesAPI(BaseAPI):
 
     def get_live_stock_prices(self, api_token: str, ticker: str, s:str):
         
-        endpoint = 'real-time/'
+        endpoint = 'real-time'
         query_string = ''
 
         if ticker.strip() == "" or ticker is None:

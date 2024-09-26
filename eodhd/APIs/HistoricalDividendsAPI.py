@@ -4,7 +4,7 @@ class HistoricalDividendsAPI(BaseAPI):
 
     def get_historical_dividends_data(self, api_token: str, ticker: str, date_from: str = None, date_to: str = None):
         
-        endpoint = 'div/'
+        endpoint = 'div'
 
         if ticker.strip() == "" or ticker is None:
             raise ValueError("Ticker is empty. You need to add ticker to args")
