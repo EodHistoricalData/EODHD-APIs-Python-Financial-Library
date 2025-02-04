@@ -1,9 +1,8 @@
-from json.decoder import JSONDecodeError
 import sys
 from requests import get as requests_get
 from requests import ConnectionError as requests_ConnectionError
 from requests import Timeout as requests_Timeout
-from requests.exceptions import HTTPError as requests_HTTPError
+from requests.exceptions import HTTPError as requests_HTTPError, JSONDecodeError as requests_JSONDecodeError
 from rich.console import Console
 
 class BaseAPI:
@@ -24,7 +23,9 @@ class BaseAPI:
 
             if resp.status_code != 200:
                 try:
-                    if "message" in resp.json():
+                    if resp.headers.get("Content-Type") != 'application/json':
+                        resp_message = resp.text
+                    elif "message" in resp.json():
                         resp_message = resp.json()["message"]
                     elif "errors" in resp.json():
                         self.console.log(resp.json())
@@ -35,7 +36,7 @@ class BaseAPI:
                     message = f"({resp.status_code}) {self._api_url} - {resp_message}"
                     self.console.log(message)
 
-                except JSONDecodeError as err:
+                except requests_JSONDecodeError as err:
                     self.console.log(err)
 
             try:
