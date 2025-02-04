@@ -118,7 +118,9 @@ class APIClient:
 
             if resp.status_code != 200:
                 try:
-                    if "message" in resp.json():
+                    if resp.headers.get("Content-Type") != 'application/json':
+                        resp_message = resp.text
+                    elif "message" in resp.json():
                         resp_message = resp.json()["message"]
                     elif "errors" in resp.json():
                         self.console.log(resp.json())
