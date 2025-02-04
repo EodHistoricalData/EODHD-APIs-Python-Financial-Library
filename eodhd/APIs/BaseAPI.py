@@ -6,6 +6,8 @@ from requests import Timeout as requests_Timeout
 from requests.exceptions import HTTPError as requests_HTTPError
 from rich.console import Console
 
+from eodhd.rates import Rate
+
 class BaseAPI:
 
     def __init__(self) -> None:
@@ -21,6 +23,7 @@ class BaseAPI:
 
         try:
             resp = requests_get(f"{self._api_url}/{endpoint}/{uri}?api_token={api_key}&fmt=json{querystring}")
+            Rate().update_from_headers(resp.headers)
 
             if resp.status_code != 200:
                 try:

@@ -38,6 +38,7 @@ from eodhd.APIs import IntradayDataAPI
 from eodhd.APIs import EodHistoricalStockMarketDataAPI
 from eodhd.APIs import StockMarketTickDataAPI
 from eodhd.APIs import HistoricalMarketCapitalization
+from eodhd.rates import Rate
 
 # minimal traceback
 sys.tracebacklimit = 1
@@ -105,6 +106,7 @@ class APIClient:
 
         self._api_key = api_key
         self._api_url = "https://eodhd.com/api"
+        self.rate = Rate()
 
         self.console = Console()
 
@@ -116,6 +118,7 @@ class APIClient:
 
         try:
             resp = requests_get(f"{self._api_url}/{endpoint}/{uri}?api_token={self._api_key}&fmt=json{querystring}")
+            self.rate.update_from_headers(resp.headers)
 
             if resp.status_code != 200:
                 try:
