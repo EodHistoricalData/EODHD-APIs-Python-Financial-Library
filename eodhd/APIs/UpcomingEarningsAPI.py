@@ -1,9 +1,11 @@
+#APIs/UpcomingEarningsAPI.py
+
 from .BaseAPI import BaseAPI
 
 class UpcomgingEarningsAPI(BaseAPI):
 
-    def get_upcoming_earnings_data(self, api_token: str, from_date = None, to_date = None, symbols = None):
-        
+    def get_upcoming_earnings_data(self, api_token: str, from_date=None, to_date=None, symbols=None):
+
         endpoint = 'calendar/earnings'
 
         query_string = ''
@@ -15,5 +17,4 @@ class UpcomgingEarningsAPI(BaseAPI):
         if symbols:
             query_string += '&symbols=' + str(symbols)
 
-        
-        return self._rest_get_method(api_key = api_token, endpoint = endpoint, querystring = query_string)
+        return self._rest_get_method(api_key=api_token, endpoint=endpoint, querystring=query_string)

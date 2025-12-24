@@ -1,3 +1,5 @@
+# APIs/BaseAPI.py
+
 from json.decoder import JSONDecodeError
 import sys
 from requests import get as requests_get
@@ -6,16 +8,16 @@ from requests import Timeout as requests_Timeout
 from requests.exceptions import HTTPError as requests_HTTPError
 from rich.console import Console
 
+
 class BaseAPI:
 
     def __init__(self) -> None:
         self._api_url = "https://eodhd.com/api"
         self.console = Console()
 
-
     def _rest_get_method(self, api_key: str, endpoint: str = "", uri: str = "", querystring: str = ""):
         """Generic REST GET"""
-        
+
         if endpoint.strip() == "":
             raise ValueError("endpoint is empty!")
 

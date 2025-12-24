@@ -1,14 +1,17 @@
+# APIs/HistoricalSplitsAPI.py
+
 from .BaseAPI import BaseAPI
 
+
 class HistoricalSplitsAPI(BaseAPI):
-    
+
     def get_historical_splits_data(self, api_token: str, ticker: str, date_from: str = None, date_to: str = None):
 
         endpoint = 'splits'
 
         if ticker.strip() == "" or ticker is None:
             raise ValueError("Ticker is empty. You need to add ticker to args")
-        
+
         query_string = ''
 
         if date_to is not None:
@@ -16,4 +19,4 @@ class HistoricalSplitsAPI(BaseAPI):
         if date_from is not None:
             query_string += "&from=" + date_from
 
-        return self._rest_get_method(api_key = api_token, endpoint = endpoint, uri = ticker, querystring = query_string)
+        return self._rest_get_method(api_key=api_token, endpoint=endpoint, uri=ticker, querystring=query_string)
