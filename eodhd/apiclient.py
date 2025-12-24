@@ -1,4 +1,4 @@
-"""apiclient.py"""
+#apiclient.py
 
 from json.decoder import JSONDecodeError
 import sys
@@ -15,7 +15,7 @@ from requests.exceptions import HTTPError as requests_HTTPError
 from rich.console import Console
 from rich.progress import track
 
-from eodhd.APIs import HistoricalDividendsAPI
+from eodhd.APIs import HistoricalDividendsAPI, UpcomingDividendsAPI
 from eodhd.APIs import HistoricalSplitsAPI
 from eodhd.APIs import TechnicalIndicatorAPI
 from eodhd.APIs import LiveStockPricesAPI
@@ -27,6 +27,7 @@ from eodhd.APIs import UpcomgingEarningsAPI
 from eodhd.APIs import EarningTrendsAPI
 from eodhd.APIs import UpcomingIPOsAPI
 from eodhd.APIs import UpcomingSplitsAPI
+from eodhd.APIs import UpcomingDividendsAPI
 from eodhd.APIs import MacroIndicatorsAPI
 from eodhd.APIs import ListOfExchangesAPI
 from eodhd.APIs import TradingHours_StockMarketHolidays_SymbolsChangeHistoryAPI
@@ -35,7 +36,17 @@ from eodhd.APIs import FinancialNewsAPI
 from eodhd.APIs import IntradayDataAPI
 from eodhd.APIs import EodHistoricalStockMarketDataAPI
 from eodhd.APIs import StockMarketTickDataAPI
-from eodhd.APIs import HistoricalMarketCapitalization
+from eodhd.APIs import HistoricalMarketCapitalizationAPI
+from eodhd.APIs import CBOEIndexFeedAPI
+from eodhd.APIs import IDMappingAPI
+
+
+#Marketplace endpoints
+from eodhd.APIs import MPIndexComponentsAPI
+from eodhd.APIs import MPIndicesListAPI
+from eodhd.APIs import MPUSOptionsContractsAPI
+from eodhd.APIs import MPUSOptionsEODAPI
+from eodhd.APIs import MPUSOptionsUnderlyingSymbolsAPI
 
 # minimal traceback
 sys.tracebacklimit = 1
@@ -328,7 +339,7 @@ class APIClient:
                 except ValueError:
                     self.console.log("invalid end date (yyyy-mm-ddThh-mm-ss OR yyyy-mm-dd OR nnnnnnnnnn):", iso8601_end)
                     sys.exit()
-            
+
             LIMIT_FOR_1M = 120 # Limit for 1m interval
             if iso8601_start == "" or ((iso8601_start != "" and not re_iso8601.match(iso8601_start)) and (iso8601_start != "" and not re_date_only.match(iso8601_start))):
                 if interval == "d":
@@ -679,6 +690,40 @@ class APIClient:
         api_call = UpcomingSplitsAPI()
         return api_call.get_upcoming_splits_data(api_token=self._api_key, from_date=from_date, to_date=to_date)
 
+    def get_upcoming_dividends_data(
+            self,
+            symbol=None,
+            date_eq=None,
+            date_from=None,
+            date_to=None,
+            page_limit=None,
+            page_offset=None,
+    ) -> list:
+        """
+        Upcoming Dividends Calendar (/calendar/dividends)
+
+        Available args:
+            symbol (optional) - Ticker, e.g. AAPL.US (required if date_eq is not provided)
+            date_eq (optional) - Exact dividend date (YYYY-MM-DD) (required if symbol is not provided)
+            date_from (optional) - Start date (YYYY-MM-DD)
+            date_to (optional) - End date (YYYY-MM-DD)
+            page_limit (optional) - page size (1–1000)
+            page_offset (optional) - offset for pagination
+
+        Note:
+            API requires at least one of `symbol` or `date_eq`.
+        """
+        api_call = UpcomingDividendsAPI()
+        return api_call.get_upcoming_dividends_data(
+            api_token=self._api_key,
+            symbol=symbol,
+            date_eq=date_eq,
+            date_from=date_from,
+            date_to=date_to,
+            page_limit=page_limit,
+            page_offset=page_offset,
+        )
+
     def get_macro_indicators_data(self, country, indicator=None) -> list:
         """Available args:
         country (required) - Defines the country for which the indicator will be shown.
@@ -690,6 +735,7 @@ class APIClient:
 
         api_call = MacroIndicatorsAPI()
         return api_call.get_macro_indicators_data(api_token=self._api_key, country=country, indicator=indicator)
+
 
     def get_list_of_exchanges(self):
         """Available args:
@@ -753,27 +799,7 @@ class APIClient:
             sort=sort,
         )
 
-    def financial_news(self, s=None, t=None, from_date=None, to_date=None, limit=None, offset=None):
-        """Available args:
-        s (required if t empty) - The ticker code to get news for.
-        t (required if s empty) - The tag to get news on a given topic.
-        limit (not required) - The number of results should be returned with the query.
-            Default value: 50, minimum value: 1, maximum value: 1000.
-        offset (not required) - The offset of the data. Default value: 0, minimum value: 0.
-            For example, to get 100 symbols starting from 200 you should use limit=100 and offset=200.
-        from and to (not required) - the format is ‘YYYY-MM-DD’.
-            If you need data from Mar 1, 2021, to Mar 10, 2021, you should use from=2021-03-01 and to=2021-03-10.
-        """
-        api_call = FinancialNewsAPI()
-        return api_call.financial_news(
-            api_token=self._api_key,
-            limit=limit,
-            from_date=from_date,
-            to_date=to_date,
-            offset=offset,
-            s=s,
-            t=t,
-        )
+
 
 
     def get_intraday_historical_data(
@@ -842,6 +868,7 @@ class APIClient:
             order=order
         )
 
+
     def get_stock_market_tick_data(
         self,
         symbol,
@@ -851,8 +878,8 @@ class APIClient:
     ):
         """
         Available args:
-            symbol - for example, AAPL.US, consists of two parts: {SYMBOL_NAME}.{EXCHANGE_ID}. 
-                This API works only for US exchanges for the moment, 
+            symbol - for example, AAPL.US, consists of two parts: {SYMBOL_NAME}.{EXCHANGE_ID}.
+                This API works only for US exchanges for the moment,
                 then you can use 'AAPL' or 'AAPL.US' to get the data as well for other US tickers.
             from_timestamp and to_timestamp - use these parameters to filter data by datetime.
                 Parameters should be passed in UNIX time with UTC timezone,
@@ -868,29 +895,59 @@ class APIClient:
             from_timestamp=from_timestamp,
             limit=limit
         )
-    
-    def get_sentiment(
-        self,
-        s,
-        from_date=None,
-        to_date=None
-    ):
+
+    def financial_news(self, s=None, t=None, from_date=None, to_date=None, limit=None, offset=None):
         """
         Available args:
-            s [REQUIRED] -  parameter to your URL and you will be able to get data for multiple tickers at one request, 
-                            all tickers should be separated with a comma.
-            from_date and to_date [NOT REQUIRED] - the format is ‘YYYY-MM-DD’. 
-                            If you need data from Jan 5, 2022 to Feb 10, 2022, you should use from=2022-01-05 and to=2022-02-10.
-            For more information visit: https://eodhd.com/financial-apis/sentimental-data-financial-api/
-            List of supported exchanges: https://eodhd.com/financial-apis/exchanges-api-list-of-tickers-and-trading-hours/
+            s (required if t empty) - The ticker code to get news for, e.g. AAPL.US
+            t (required if s empty) - Topic tag to get news for (tags are dynamic / AI-detected)
+            from_date (not required) - Start date (YYYY-MM-DD)
+            to_date (not required) - End date (YYYY-MM-DD)
+            limit (not required) - Number of results (default: 50, min: 1, max: 1000)
+            offset (not required) - Offset for pagination (default: 0)
         """
+        api_call = FinancialNewsAPI()
+        return api_call.financial_news(
+            api_token=self._api_key,
+            s=s,
+            t=t,
+            from_date=from_date,
+            to_date=to_date,
+            limit=limit,
+            offset=offset,
+        )
 
+    def get_sentiment(self, s, from_date=None, to_date=None):
+        """
+        Available args:
+            s [REQUIRED] - One or more comma-separated tickers (e.g. "BTC-USD.CC,AAPL.US")
+            from_date, to_date [NOT REQUIRED] - YYYY-MM-DD
+        """
         api_call = FinancialNewsAPI()
         return api_call.get_sentiment(
             api_token=self._api_key,
             s=s,
             from_date=from_date,
-            to_date=to_date
+            to_date=to_date,
+        )
+
+    def news_word_weights(self, s, date_from=None, date_to=None, limit=None):
+        """
+        News Word Weights API (/api/news-word-weights)
+
+        Available args:
+            s [REQUIRED] - Ticker symbol to analyze (e.g. AAPL.US)
+            date_from [NOT REQUIRED] - YYYY-MM-DD (maps to filter[date_from])
+            date_to   [NOT REQUIRED] - YYYY-MM-DD (maps to filter[date_to])
+            limit     [NOT REQUIRED] - Number of top words to return (maps to page[limit])
+        """
+        api_call = FinancialNewsAPI()
+        return api_call.news_word_weights(
+            api_token=self._api_key,
+            s=s,
+            date_from=date_from,
+            date_to=date_to,
+            limit=limit,
         )
 
     def get_historical_market_capitalization_data(
@@ -901,20 +958,313 @@ class APIClient:
     ):
         """
         Available args:
-            ticker [REQUIRED] -  is the ticker code and it consists of two parts: {SYMBOL_NAME}.{EXCHANGE_ID}, 
+            ticker [REQUIRED] -  is the ticker code and it consists of two parts: {SYMBOL_NAME}.{EXCHANGE_ID},
                         you can use a US ticker code with or without the exchange part (AAPL or AAPL.US)
-            from_date and to_date [NOT REQUIRED] - the format is ‘YYYY-MM-DD’. 
+            from_date and to_date [NOT REQUIRED] - the format is ‘YYYY-MM-DD’.
                             If you need data from Jan 5, 2022 to Feb 10, 2022, you should use from=2022-01-05 and to=2022-02-10.
             For more information visit: https://eodhd.com/financial-apis/historical-market-capitalization-api/
         """
 
-        api_call = HistoricalMarketCapitalization()
+        api_call = HistoricalMarketCapitalizationAPI()
         return api_call.get_historical_market_capitalization_data(
             api_token=self._api_key,
             ticker=ticker,
             from_date=from_date,
             to_date=to_date
         )
+
+
+    def get_cboe_index_data(self, index_code, feed_type, date, fmt=None):
+        """
+        CBOE Index Feed API
+        Endpoint:
+            GET /api/cboe/index
+
+        Required args (passed as filter[...] params):
+            index_code - e.g. "BDE30P"
+            feed_type  - e.g. "snapshot_official_closing"
+            date       - YYYY-MM-DD, e.g. "2017-02-01"
+
+        Optional:
+            fmt - "json" or "xml"
+
+        Example:
+            client.get_cboe_index_data(
+                index_code="BDE30P",
+                feed_type="snapshot_official_closing",
+                date="2017-02-01"
+            )
+        """
+        api_call = CBOEIndexFeedAPI()
+        return api_call.get_cboe_index_data(
+            api_token=self._api_key,
+            index_code=index_code,
+            feed_type=feed_type,
+            date=date,
+            fmt=fmt,
+        )
+
+    def get_cboe_indices_list(self, fmt=None):
+        """
+        CBOE Indices List API
+        Endpoint:
+            GET /api/cboe/indices
+
+        Args:
+            fmt (optional) - "json" or "xml"
+
+        Returns:
+            dict with keys: meta, data, links (links.next for pagination)
+        """
+        api_call = CBOEIndexFeedAPI()
+        return api_call.get_cboe_indices_list(
+            api_token=self._api_key,
+            fmt=fmt,
+        )
+
+    def get_id_mapping(
+            self,
+            symbol=None,
+            ex=None,
+            isin=None,
+            figi=None,
+            lei=None,
+            cusip=None,
+            cik=None,
+            page_limit=None,
+            page_offset=None,
+            fmt=None,
+    ):
+        """
+        ID Mapping API (CUSIP / ISIN / FIGI / LEI / CIK ↔ Symbol)
+        Endpoint:
+            GET /api/id-mapping
+
+        Provide at least one of:
+            symbol, ex, isin, figi, lei, cusip, cik
+
+        Pagination:
+            page_limit (1..1000), page_offset (>=0)
+
+        Returns:
+            dict with meta/data/links (links.next for pagination)
+        """
+        api_call = IDMappingAPI()
+        return api_call.get_id_mapping(
+            api_token=self._api_key,
+            symbol=symbol,
+            ex=ex,
+            isin=isin,
+            figi=figi,
+            lei=lei,
+            cusip=cusip,
+            cik=cik,
+            page_limit=page_limit,
+            page_offset=page_offset,
+            fmt=fmt,
+        )
+
+    # marketplace endpoints, provided by EODHD
+    def mp_indices_list(self):
+        """
+        Marketplace: S&P Global / UnicornBay indices list
+
+        Endpoint:
+            GET /api/mp/unicornbay/spglobal/list
+
+        Returns:
+            list[dict] - list of indices with fields like Code, Name, Constituents, etc.
+        """
+        api_call = MPIndicesListAPI()
+        return api_call.get_indices_list(api_token=self._api_key)
+
+    def mp_index_components(self, symbol, historical=None, from_date=None, to_date=None):
+        """
+        Marketplace: S&P Global / UnicornBay index components
+
+        Endpoint:
+            GET /api/mp/unicornbay/spglobal/comp/{symbol}
+
+        Args:
+            symbol [REQUIRED] - Index symbol, e.g. "GSPC.INDX"
+            historical [OPTIONAL] - True/False or 1/0 to include historical changes
+            from_date [OPTIONAL] - YYYY-MM-DD (maps to &from=)
+            to_date   [OPTIONAL] - YYYY-MM-DD (maps to &to=)
+
+        Returns:
+            dict - JSON with keys like "General", "Components",
+                   and optionally historical keys.
+        """
+        api_call = MPIndexComponentsAPI()
+        return api_call.get_index_components(
+            api_token=self._api_key,
+            symbol=symbol,
+            historical=historical,
+            from_date=from_date,
+            to_date=to_date,
+        )
+
+    def get_us_options_contracts(
+            self,
+            underlying_symbol=None,
+            contract=None,
+            exp_date_eq=None,
+            exp_date_from=None,
+            exp_date_to=None,
+            tradetime_eq=None,
+            tradetime_from=None,
+            tradetime_to=None,
+            type=None,
+            strike_eq=None,
+            strike_from=None,
+            strike_to=None,
+            sort=None,
+            page_offset=0,
+            page_limit=1000,
+            fields=None,
+            fmt="json",
+    ):
+        """
+        US Stock Options Data API - Get options contracts
+        Endpoint:
+            GET /api/mp/unicornbay/options/contracts
+
+        Filters:
+            underlying_symbol, contract
+            exp_date_eq/from/to
+            tradetime_eq/from/to
+            type ('put'|'call')
+            strike_eq/from/to
+
+        Sorting:
+            sort in {'exp_date','strike','-exp_date','-strike'}
+
+        Pagination:
+            page_offset: 0..10000
+            page_limit:  1..1000
+
+        Fields:
+            fields[options-contracts] as "a,b,c" or ["a","b","c"]
+
+        Returns:
+            dict with meta, data[], links.next (pagination)
+        """
+        api_call = MPUSOptionsContractsAPI()
+        return api_call.get_us_options_contracts(
+            api_token=self._api_key,
+            underlying_symbol=underlying_symbol,
+            contract=contract,
+            exp_date_eq=exp_date_eq,
+            exp_date_from=exp_date_from,
+            exp_date_to=exp_date_to,
+            tradetime_eq=tradetime_eq,
+            tradetime_from=tradetime_from,
+            tradetime_to=tradetime_to,
+            type=type,
+            strike_eq=strike_eq,
+            strike_from=strike_from,
+            strike_to=strike_to,
+            sort=sort,
+            page_offset=page_offset,
+            page_limit=page_limit,
+            fields=fields,
+            fmt=fmt,
+        )
+
+    def get_us_options_eod(
+            self,
+            underlying_symbol=None,
+            contract=None,
+            exp_date_eq=None,
+            exp_date_from=None,
+            exp_date_to=None,
+            tradetime_eq=None,
+            tradetime_from=None,
+            tradetime_to=None,
+            type=None,
+            strike_eq=None,
+            strike_from=None,
+            strike_to=None,
+            sort=None,
+            page_offset=0,
+            page_limit=1000,
+            fields=None,
+            compact=None,
+            fmt="json",
+    ):
+        """
+        US Stock Options Data API - End-of-day options data
+        Endpoint:
+            GET /api/mp/unicornbay/options/eod
+
+        Filters:
+            underlying_symbol, contract
+            exp_date_eq/from/to
+            tradetime_eq/from/to
+            type ('put'|'call')
+            strike_eq/from/to
+
+        Sorting:
+            sort in {'exp_date','strike','-exp_date','-strike'}
+
+        Pagination:
+            page_offset: 0..10000
+            page_limit:  1..1000
+
+        Fields:
+            fields[options-eod] as "a,b,c" or ["a","b","c"]
+
+        Compact:
+            compact=1 to minimize payload (array-style response)
+
+        Returns:
+            dict with meta, data[], links.next (pagination)
+        """
+        api_call = MPUSOptionsEODAPI()
+        return api_call.get_us_options_eod(
+            api_token=self._api_key,
+            underlying_symbol=underlying_symbol,
+            contract=contract,
+            exp_date_eq=exp_date_eq,
+            exp_date_from=exp_date_from,
+            exp_date_to=exp_date_to,
+            tradetime_eq=tradetime_eq,
+            tradetime_from=tradetime_from,
+            tradetime_to=tradetime_to,
+            type=type,
+            strike_eq=strike_eq,
+            strike_from=strike_from,
+            strike_to=strike_to,
+            sort=sort,
+            page_offset=page_offset,
+            page_limit=page_limit,
+            fields=fields,
+            compact=compact,
+            fmt=fmt,
+        )
+
+    def get_us_options_underlyings(self, page_offset=None, page_limit=None, fmt="json"):
+        """
+        US Stock Options Data API - Underlying symbols list
+        Endpoint:
+            GET /api/mp/unicornbay/options/underlying-symbols
+
+        Args:
+            page_offset (optional) - pagination offset (if supported)
+            page_limit  (optional) - pagination limit  (if supported)
+            fmt         (optional) - "json" (default) or "xml"
+
+        Returns:
+            dict with meta, data (list of symbols), links.next
+        """
+        api_call = MPUSOptionsUnderlyingSymbolsAPI()
+        return api_call.get_us_options_underlyings(
+            api_token=self._api_key,
+            page_offset=page_offset,
+            page_limit=page_limit,
+            fmt=fmt,
+        )
+
 
 class ScannerClient:
     """Scanner class"""
