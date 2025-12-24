@@ -33,7 +33,6 @@ from eodhd.APIs import ListOfExchangesAPI
 from eodhd.APIs import TradingHours_StockMarketHolidays_SymbolsChangeHistoryAPI
 from eodhd.APIs import StockMarketScreenerAPI
 from eodhd.APIs import FinancialNewsAPI
-from eodhd.APIs import OptionsDataAPI
 from eodhd.APIs import IntradayDataAPI
 from eodhd.APIs import EodHistoricalStockMarketDataAPI
 from eodhd.APIs import StockMarketTickDataAPI
@@ -787,43 +786,6 @@ class APIClient:
             t=t,
         )
 
-    def get_options_data(
-        self,
-        ticker,
-        date_to=None,
-        date_from=None,
-        trade_date_to=None,
-        trade_date_from=None,
-        contract_name=None,
-    ):
-        """
-        Stock options data for top US stocks from NYSE and NASDAQ, the data for Options starts from April 2018.
-        Options data is updated daily; however,
-        the API does not provide a history for options contracts prices or other related data.
-        That means: for each contract, there is only the current price, bid/ask, etc.
-
-        1. IMPORTANT! For backward compatibility, you should use the from parameter with any value before the expiration date,
-        the API recommends '2000-01-01'.
-
-        2. Note: option greeks and some additional value are available only for options with expiration date Feb 15, 2019, or later.
-
-        Available args:
-            ticker(string): Required - Could be any supported symbol. No default value.
-            date_to(DateTime) and date_from(DateTime): Optional - the beginning and end of the desired dates.
-            trade_date_from(DateTime): Optional - filters OPTIONS by lastTradeDateTime. Default value is blank.
-            trade_date_to(DateTime): Optional - filters OPTIONS by lastTradeDateTime. Default value is blank.
-            contract_name(string): Optional - Name of a particular contract.
-        """
-        api_call = OptionsDataAPI()
-        return api_call.get_options_data(
-            api_token=self._api_key,
-            ticker=ticker,
-            date_to=date_to,
-            date_from=date_from,
-            trade_date_to=trade_date_to,
-            trade_date_from=trade_date_from,
-            contract_name=contract_name,
-        )
 
     def get_intraday_historical_data(
         self,
