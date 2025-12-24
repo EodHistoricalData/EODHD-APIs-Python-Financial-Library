@@ -10,7 +10,6 @@ To access our APIs, you need to register on our site (it’s free) and obtain an
 
 * End of the Day Historical Stock Market Data
 * Live (Delayed) Stock Prices and Macroeconomic Data
-* Bonds Fundamentals
 * Intraday Historical Data
 * Historical Dividends
 * Historical Splits
