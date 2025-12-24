@@ -28,7 +28,6 @@ from eodhd.APIs import EarningTrendsAPI
 from eodhd.APIs import UpcomingIPOsAPI
 from eodhd.APIs import UpcomingSplitsAPI
 from eodhd.APIs import MacroIndicatorsAPI
-from eodhd.APIs import BondsFundamentalsAPI
 from eodhd.APIs import ListOfExchangesAPI
 from eodhd.APIs import TradingHours_StockMarketHolidays_SymbolsChangeHistoryAPI
 from eodhd.APIs import StockMarketScreenerAPI
@@ -691,16 +690,6 @@ class APIClient:
 
         api_call = MacroIndicatorsAPI()
         return api_call.get_macro_indicators_data(api_token=self._api_key, country=country, indicator=indicator)
-
-    def get_bonds_fundamentals_data(self, isin=None) -> list:
-        """Available args:
-        isin - An International Securities Identification Number, in current function isin may be cusip-code.
-            Other IDs are not supported at the moment.
-        For more information visit: https://eodhistoricaldata.com/financial-apis/bonds-fundamentals-and-historical-api/
-        """
-
-        api_call = BondsFundamentalsAPI()
-        return api_call.get_bonds_fundamentals_data(api_token=self._api_key, isin=isin)
 
     def get_list_of_exchanges(self):
         """Available args:

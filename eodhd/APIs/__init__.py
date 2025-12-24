@@ -11,7 +11,6 @@ from .EarningTrendsAPI import EarningTrendsAPI
 from .UpcomingIPOsAPI import UpcomingIPOsAPI
 from .UpcomingSplitsAPI import UpcomingSplitsAPI
 from .MacroIndicatorsAPI import MacroIndicatorsAPI
-from .BondsFundamentalsAPI import BondsFundamentalsAPI
 from .ListOfExchangesAPI import ListOfExchangesAPI
 from .TradingHours_StockMarketHolidays_SymbolsChangeHistory import TradingHours_StockMarketHolidays_SymbolsChangeHistoryAPI
 from .StockMarketScreenerAPI import StockMarketScreenerAPI
