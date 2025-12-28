@@ -782,19 +782,64 @@ class APIClient:
         api_call = ListOfExchangesAPI()
         return api_call.get_list_of_exchanges(api_token=self._api_key)
 
-    def get_list_of_tickers(self, code, delisted=0):
-        """Available args:
-        delisted (not required) - by default, this API provides only tickers that were active at least a month ago,
-            to get the list of inactive (delisted) tickers please use the parameter “delisted=1”
-        code (required) - For US exchanges you can also get all US tickers,
-            then you should use the ‘US’ exchange code and tickers only for the particular exchange,
-            the list of possible US exchanges to request:'US', 'NYSE', 'NASDAQ', 'BATS', 'OTCQB', 'PINK', 'OTCQX',
-            'OTCMKTS', 'NMFQS', 'NYSE MKT', 'OTCBB', 'OTCGREY', 'BATS', 'OTC'
-        For more information visit: https://eodhistoricaldata.com/financial-apis/exchanges-api-list-of-tickers-and-trading-hours/
+    def get_list_of_tickers(self, code: str, delisted: int = 0, include_delisted: bool = False):
+        """Get list of tickers for an exchange.
+
+        Parameters
+        ----------
+        code : str
+            Exchange code (e.g., "US", "NYSE", "NASDAQ", etc.).
+        delisted : int, optional
+            0 = listed only, 1 = delisted only. Ignored if include_delisted=True.
+        include_delisted : bool, optional
+            If True, returns both listed and delisted tickers.
+
+        Notes
+        -----
+        - By default, the API returns only tickers that were active at least a month ago.
+        - delisted=1 returns delisted tickers only.
+        - include_delisted=True returns both listed and delisted tickers.
         """
+        if code is None or str(code).strip() == "":
+            raise ValueError("Parameter 'code' is required (exchange code).")
+
+        # Allow 0/1 as well as True/False
+        include_delisted = bool(include_delisted)
+
+        if delisted not in (0, 1):
+            raise ValueError("Parameter 'delisted' must be 0 or 1.")
 
         api_call = ListOfExchangesAPI()
-        return api_call.get_list_of_tickers(api_token=self._api_key, delisted=delisted, code=code)
+
+        if not include_delisted:
+            return api_call.get_list_of_tickers(api_token=self._api_key, delisted=delisted, code=code)
+
+        # include_delisted=True: fetch both
+        listed = api_call.get_list_of_tickers(api_token=self._api_key, delisted=0, code=code)
+        delisted_list = api_call.get_list_of_tickers(api_token=self._api_key, delisted=1, code=code)
+
+        if isinstance(listed, list) and isinstance(delisted_list, list):
+            return listed + delisted_list
+
+        if isinstance(listed, dict) and isinstance(delisted_list, dict):
+            if "data" in listed and "data" in delisted_list and isinstance(listed["data"], list) and isinstance(
+                    delisted_list["data"], list):
+                merged = dict(listed)
+                merged["data"] = listed["data"] + delisted_list["data"]
+                # optional: recompute meta.total if present
+                if "meta" in merged and isinstance(merged["meta"], dict):
+                    total = None
+                    try:
+                        total = len(merged["data"])
+                    except Exception:
+                        total = None
+                    if total is not None:
+                        merged["meta"]["total"] = total
+                return merged
+
+            return {"listed": listed, "delisted": delisted_list}
+
+        return {"listed": listed, "delisted": delisted_list}
 
     def get_details_trading_hours_stock_market_holidays(self, code, from_date=None, to_date=None):
         """Available args:
