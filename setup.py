@@ -38,4 +38,6 @@ setup(
         "numpy>=1.25.2",
         "matplotlib>=3.7.2",
     ],
+    entry_points={"console_scripts": ["eodhd=eodhd.__main__:main"]}
+
 )
