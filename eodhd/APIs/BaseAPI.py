@@ -1,7 +1,6 @@
 # APIs/BaseAPI.py
 
 from json.decoder import JSONDecodeError
-import sys
 from requests import get as requests_get
 from requests import ConnectionError as requests_ConnectionError
 from requests import Timeout as requests_Timeout
@@ -29,8 +28,9 @@ class BaseAPI:
                     if "message" in resp.json():
                         resp_message = resp.json()["message"]
                     elif "errors" in resp.json():
-                        self.console.log(resp.json())
-                        sys.exit(1)
+                        errors = resp.json()
+                        self.console.log(errors)
+                        raise RuntimeError(f"EODHD API returned errors (HTTP {resp.status_code}): {errors}")
                     else:
                         resp_message = ""
 
