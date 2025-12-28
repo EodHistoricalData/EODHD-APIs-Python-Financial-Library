@@ -19,6 +19,7 @@ from eodhd.APIs import HistoricalDividendsAPI, UpcomingDividendsAPI
 from eodhd.APIs import HistoricalSplitsAPI
 from eodhd.APIs import TechnicalIndicatorAPI
 from eodhd.APIs import LiveStockPricesAPI
+from eodhd.APIs import LiveExtendedQuotesAPI
 from eodhd.APIs import EconomicEventsDataAPI
 from eodhd.APIs import InsiderTransactionsAPI
 from eodhd.APIs import FundamentalDataAPI
@@ -541,7 +542,7 @@ class APIClient:
             maximum=maximum
         )
 
-    def get_live_stock_prices(self, ticker, date_to=None, date_from=None, s=None) -> list:
+    def get_live_stock_prices(self, ticker, s=None) -> list:
         """Available args:
         ticker (required) - consists of two parts: [SYMBOL_NAME].[EXCHANGE_ID]. Example: AAPL.US
         s (not required) - add “s=” parameter to your function and you will be able to get data for multiple
@@ -552,6 +553,40 @@ class APIClient:
 
         api_call = LiveStockPricesAPI()
         return api_call.get_live_stock_prices(api_token=self._api_key, ticker=ticker, s=s)
+
+    def get_us_extended_quotes(
+            self,
+            s,
+            page_limit = None,
+            page_offset = None,
+            fmt = None,  # "json" or "csv"
+    ) ->list:
+        """Available args (Live v2 US Stocks — Extended/Delayed Quotes):
+
+          api_token (required) - your API access token (if not already configured in the client)
+
+          s (required) - one or more symbols in the format [SYMBOL].[EXCHANGE_ID], separated by commas.
+              Example symbols: AAPL.US, TSLA.US
+              Example request:
+                https://eodhd.com/api/us-quote-delayed?s=AAPL.US,TSLA.US&api_token=YOUR_API_TOKEN&fmt=json
+
+          page[limit] (optional) - number of symbols per page (max 100; defaults apply if omitted)
+
+          page[offset] (optional) - pagination offset
+
+        Returns:
+          - meta.count: number of returned symbols
+          - data: an object keyed by symbol (e.g., data["AAPL.US"]) containing the extended quote snapshot
+            (bid/ask with sizes + event times, last trade price/time, OHLC, volume, change, averages,
+             52-week high/low, market cap, P/E, dividends, issuer fields, etc.)
+          - links.next: URL for the next page of results (or null)
+
+        For more information visit:
+          https://eodhd.com/financial-apis/live-v2-for-us-stocks-extended-quotes-2025
+        """
+        api_call = LiveExtendedQuotesAPI()
+        return api_call.get_us_extended_quotes(api_token=self._api_key, symbols=s, page_limit = page_limit, page_offset = page_offset,
+            fmt = fmt)
 
     def get_economic_events_data(
         self,
