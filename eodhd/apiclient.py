@@ -168,17 +168,53 @@ class APIClient:
 
         return self._rest_get("exchanges-list")
 
-    def get_exchange_symbols(self, uri: str = "", delisted=False) -> pd.DataFrame:
-        """Get supported exchange symbols"""
+    def get_exchange_symbols(
+            self,
+            uri: str = "",
+            delisted: bool = False,
+            include_delisted: bool = False,
+    ) -> pd.DataFrame:
+        """Get supported exchange symbols.
 
+        Parameters
+        ----------
+        uri : str
+            Exchange code, e.g. "US".
+        delisted : bool, optional
+            If True, return delisted symbols only. Ignored if include_delisted=True.
+        include_delisted : bool, optional
+            If True, return both listed and delisted symbols in one DataFrame.
+
+        Returns
+        -------
+        pd.DataFrame
+        """
         try:
-            if uri.strip() == "":
+            if uri is None or str(uri).strip() == "":
                 raise ValueError("endpoint uri is empty!")
 
-            if delisted:
-                return self._rest_get("exchange-symbol-list", uri, "&delisted=1")
+            # allow 0/1 and True/False
+            delisted = bool(delisted)
+            include_delisted = bool(include_delisted)
 
-            return self._rest_get("exchange-symbol-list", uri)
+            if not include_delisted:
+                if delisted:
+                    return self._rest_get("exchange-symbol-list", uri, "&delisted=1")
+                return self._rest_get("exchange-symbol-list", uri)
+
+            # include_delisted=True -> merge both
+            listed_df = self._rest_get("exchange-symbol-list", uri)
+            delisted_df = self._rest_get("exchange-symbol-list", uri, "&delisted=1")
+
+            # If either is empty, return the other
+            if listed_df is None or len(listed_df) == 0:
+                return delisted_df if delisted_df is not None else pd.DataFrame()
+            if delisted_df is None or len(delisted_df) == 0:
+                return listed_df
+
+            # Concatenate safely
+            return pd.concat([listed_df, delisted_df], ignore_index=True)
+
         except ValueError as err:
             self.console.log(err)
             return pd.DataFrame()
