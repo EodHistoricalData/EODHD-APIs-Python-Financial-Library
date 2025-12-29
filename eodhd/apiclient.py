@@ -1,7 +1,7 @@
 #apiclient.py
 
-from json.decoder import JSONDecodeError
 import sys
+from json.decoder import JSONDecodeError
 from enum import Enum
 from datetime import datetime
 from datetime import timedelta
@@ -132,8 +132,9 @@ class APIClient:
                     if "message" in resp.json():
                         resp_message = resp.json()["message"]
                     elif "errors" in resp.json():
-                        self.console.log(resp.json())
-                        sys.exit(1)
+                        errors = resp.json()
+                        self.console.log(errors)
+                        raise RuntimeError(f"EODHD API returned errors (HTTP {resp.status_code}): {errors}")
                     else:
                         resp_message = ""
 
@@ -167,17 +168,53 @@ class APIClient:
 
         return self._rest_get("exchanges-list")
 
-    def get_exchange_symbols(self, uri: str = "", delisted=False) -> pd.DataFrame:
-        """Get supported exchange symbols"""
+    def get_exchange_symbols(
+            self,
+            uri: str = "",
+            delisted: bool = False,
+            include_delisted: bool = False,
+    ) -> pd.DataFrame:
+        """Get supported exchange symbols.
 
+        Parameters
+        ----------
+        uri : str
+            Exchange code, e.g. "US".
+        delisted : bool, optional
+            If True, return delisted symbols only. Ignored if include_delisted=True.
+        include_delisted : bool, optional
+            If True, return both listed and delisted symbols in one DataFrame.
+
+        Returns
+        -------
+        pd.DataFrame
+        """
         try:
-            if uri.strip() == "":
+            if uri is None or str(uri).strip() == "":
                 raise ValueError("endpoint uri is empty!")
 
-            if delisted:
-                return self._rest_get("exchange-symbol-list", uri, "&delisted=1")
+            # allow 0/1 and True/False
+            delisted = bool(delisted)
+            include_delisted = bool(include_delisted)
 
-            return self._rest_get("exchange-symbol-list", uri)
+            if not include_delisted:
+                if delisted:
+                    return self._rest_get("exchange-symbol-list", uri, "&delisted=1")
+                return self._rest_get("exchange-symbol-list", uri)
+
+            # include_delisted=True -> merge both
+            listed_df = self._rest_get("exchange-symbol-list", uri)
+            delisted_df = self._rest_get("exchange-symbol-list", uri, "&delisted=1")
+
+            # If either is empty, return the other
+            if listed_df is None or len(listed_df) == 0:
+                return delisted_df if delisted_df is not None else pd.DataFrame()
+            if delisted_df is None or len(delisted_df) == 0:
+                return listed_df
+
+            # Concatenate safely
+            return pd.concat([listed_df, delisted_df], ignore_index=True)
+
         except ValueError as err:
             self.console.log(err)
             return pd.DataFrame()
@@ -554,13 +591,10 @@ class APIClient:
         api_call = LiveStockPricesAPI()
         return api_call.get_live_stock_prices(api_token=self._api_key, ticker=ticker, s=s)
 
-    def get_us_extended_quotes(
-            self,
-            s,
-            page_limit = None,
-            page_offset = None,
-            fmt = None,  # "json" or "csv"
-    ) ->list:
+    def get_us_extended_quotes(self, s, page_limit=None, page_offset=None, fmt=None) -> list:
+        if fmt is not None and str(fmt).lower() != "json":
+            raise ValueError("This library currently supports only fmt='json' for us-quote-delayed.")
+
         """Available args (Live v2 US Stocks — Extended/Delayed Quotes):
 
           api_token (required) - your API access token (if not already configured in the client)
@@ -585,8 +619,12 @@ class APIClient:
           https://eodhd.com/financial-apis/live-v2-for-us-stocks-extended-quotes-2025
         """
         api_call = LiveExtendedQuotesAPI()
-        return api_call.get_us_extended_quotes(api_token=self._api_key, symbols=s, page_limit = page_limit, page_offset = page_offset,
-            fmt = fmt)
+        return api_call.get_us_extended_quotes(
+            api_token=self._api_key,
+            symbols=s,
+            page_limit=page_limit,
+            page_offset=page_offset,
+        )
 
     def get_economic_events_data(
         self,
@@ -780,19 +818,64 @@ class APIClient:
         api_call = ListOfExchangesAPI()
         return api_call.get_list_of_exchanges(api_token=self._api_key)
 
-    def get_list_of_tickers(self, code, delisted=0):
-        """Available args:
-        delisted (not required) - by default, this API provides only tickers that were active at least a month ago,
-            to get the list of inactive (delisted) tickers please use the parameter “delisted=1”
-        code (required) - For US exchanges you can also get all US tickers,
-            then you should use the ‘US’ exchange code and tickers only for the particular exchange,
-            the list of possible US exchanges to request:'US', 'NYSE', 'NASDAQ', 'BATS', 'OTCQB', 'PINK', 'OTCQX',
-            'OTCMKTS', 'NMFQS', 'NYSE MKT', 'OTCBB', 'OTCGREY', 'BATS', 'OTC'
-        For more information visit: https://eodhistoricaldata.com/financial-apis/exchanges-api-list-of-tickers-and-trading-hours/
+    def get_list_of_tickers(self, code: str, delisted: int = 0, include_delisted: bool = False):
+        """Get list of tickers for an exchange.
+
+        Parameters
+        ----------
+        code : str
+            Exchange code (e.g., "US", "NYSE", "NASDAQ", etc.).
+        delisted : int, optional
+            0 = listed only, 1 = delisted only. Ignored if include_delisted=True.
+        include_delisted : bool, optional
+            If True, returns both listed and delisted tickers.
+
+        Notes
+        -----
+        - By default, the API returns only tickers that were active at least a month ago.
+        - delisted=1 returns delisted tickers only.
+        - include_delisted=True returns both listed and delisted tickers.
         """
+        if code is None or str(code).strip() == "":
+            raise ValueError("Parameter 'code' is required (exchange code).")
+
+        # Allow 0/1 as well as True/False
+        include_delisted = bool(include_delisted)
+
+        if delisted not in (0, 1):
+            raise ValueError("Parameter 'delisted' must be 0 or 1.")
 
         api_call = ListOfExchangesAPI()
-        return api_call.get_list_of_tickers(api_token=self._api_key, delisted=delisted, code=code)
+
+        if not include_delisted:
+            return api_call.get_list_of_tickers(api_token=self._api_key, delisted=delisted, code=code)
+
+        # include_delisted=True: fetch both
+        listed = api_call.get_list_of_tickers(api_token=self._api_key, delisted=0, code=code)
+        delisted_list = api_call.get_list_of_tickers(api_token=self._api_key, delisted=1, code=code)
+
+        if isinstance(listed, list) and isinstance(delisted_list, list):
+            return listed + delisted_list
+
+        if isinstance(listed, dict) and isinstance(delisted_list, dict):
+            if "data" in listed and "data" in delisted_list and isinstance(listed["data"], list) and isinstance(
+                    delisted_list["data"], list):
+                merged = dict(listed)
+                merged["data"] = listed["data"] + delisted_list["data"]
+                # optional: recompute meta.total if present
+                if "meta" in merged and isinstance(merged["meta"], dict):
+                    total = None
+                    try:
+                        total = len(merged["data"])
+                    except Exception:
+                        total = None
+                    if total is not None:
+                        merged["meta"]["total"] = total
+                return merged
+
+            return {"listed": listed, "delisted": delisted_list}
+
+        return {"listed": listed, "delisted": delisted_list}
 
     def get_details_trading_hours_stock_market_holidays(self, code, from_date=None, to_date=None):
         """Available args:
