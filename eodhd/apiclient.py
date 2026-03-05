@@ -8,12 +8,13 @@ from datetime import timedelta
 from re import compile as re_compile
 import pandas as pd
 import numpy as np
-from requests import get as requests_get
+import requests
 from requests import ConnectionError as requests_ConnectionError
 from requests import Timeout as requests_Timeout
-from requests.exceptions import HTTPError as requests_HTTPError
 from rich.console import Console
 from rich.progress import track
+
+from eodhd.errors import EODHDHTTPError, EODHDConnectionError, EODHDTimeoutError
 
 from eodhd.APIs import HistoricalDividendsAPI, UpcomingDividendsAPI
 from eodhd.APIs import HistoricalSplitsAPI
@@ -107,7 +108,7 @@ class DateUtils:
 class APIClient:
     """API class"""
 
-    def __init__(self, api_key: str) -> None:
+    def __init__(self, api_key: str, timeout: tuple = (5.0, 30.0)) -> None:
         # Validate API key
         prog = re_compile(r"^[A-z0-9.]{16,32}$")
         if api_key != "demo" and not prog.match(api_key):
@@ -115,53 +116,65 @@ class APIClient:
 
         self._api_key = api_key
         self._api_url = "https://eodhd.com/api"
+        self._timeout = timeout
+        self._session = requests.Session()
 
         self.console = Console()
 
+    def close(self):
+        """Close the underlying HTTP session."""
+        self._session.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
     def _rest_get(self, endpoint: str = "", uri: str = "", querystring: str = "") -> pd.DataFrame():
-        """Generic REST GET"""
+        """Generic REST GET — raises EODHDHTTPError/EODHDConnectionError/EODHDTimeoutError on failure."""
 
         if endpoint.strip() == "":
             raise ValueError("endpoint is empty!")
 
+        url = f"{self._api_url}/{endpoint}/{uri}?api_token={self._api_key}&fmt=json{querystring}"
+
         try:
-            resp = requests_get(f"{self._api_url}/{endpoint}/{uri}?api_token={self._api_key}&fmt=json{querystring}")
-
-            if resp.status_code != 200:
-                try:
-                    if "message" in resp.json():
-                        resp_message = resp.json()["message"]
-                    elif "errors" in resp.json():
-                        errors = resp.json()
-                        self.console.log(errors)
-                        raise RuntimeError(f"EODHD API returned errors (HTTP {resp.status_code}): {errors}")
-                    else:
-                        resp_message = ""
-
-                    message = f"({resp.status_code}) {self._api_url} - {resp_message}"
-                    self.console.log(message)
-
-                except JSONDecodeError as err:
-                    self.console.log(err)
-
-            try:
-                resp.raise_for_status()
-
-                if isinstance(resp.json(), list):
-                    return pd.DataFrame.from_dict(resp.json())
-                else:
-                    return pd.DataFrame(resp.json(), index=[0])
-
-            except ValueError as err:
-                self.console.log(err)
-
+            resp = self._session.get(url, timeout=self._timeout)
         except requests_ConnectionError as err:
-            self.console.log(err)
-        except requests_HTTPError as err:
-            self.console.log(err)
+            raise EODHDConnectionError(str(err)) from err
         except requests_Timeout as err:
-            self.console.log(err)
-        return pd.DataFrame()
+            raise EODHDTimeoutError(str(err)) from err
+
+        if resp.status_code != 200:
+            try:
+                body = resp.text
+            except Exception:
+                body = ""
+            try:
+                data = resp.json()
+                message = data.get("message", "") or str(data.get("errors", ""))
+            except (JSONDecodeError, ValueError):
+                message = ""
+            raise EODHDHTTPError(
+                status_code=resp.status_code,
+                response_body=body,
+                message=f"({resp.status_code}) {self._api_url} - {message}" if message else f"HTTP {resp.status_code}",
+            )
+
+        try:
+            json_data = resp.json()
+        except (JSONDecodeError, ValueError) as err:
+            raise EODHDHTTPError(
+                status_code=resp.status_code,
+                response_body=resp.text,
+                message=f"Invalid JSON response: {err}",
+            ) from err
+
+        if isinstance(json_data, list):
+            return pd.DataFrame.from_dict(json_data)
+        else:
+            return pd.DataFrame(json_data, index=[0])
 
     def get_exchanges(self) -> pd.DataFrame:
         """Get supported exchanges"""
@@ -482,7 +495,7 @@ class APIClient:
         For more information visit: https://eodhistoricaldata.com/financial-apis/api-splits-dividends/
         """
 
-        api_call = HistoricalDividendsAPI()
+        api_call = HistoricalDividendsAPI(session=self._session, timeout=self._timeout)
         return api_call.get_historical_dividends_data(api_token=self._api_key, ticker=ticker, date_from=date_from, date_to=date_to)
 
     def get_historical_splits_data(self, ticker, date_to=None, date_from=None) -> list:
@@ -494,7 +507,7 @@ class APIClient:
         For more information visit: https://eodhistoricaldata.com/financial-apis/api-splits-dividends/
         """
 
-        api_call = HistoricalSplitsAPI()
+        api_call = HistoricalSplitsAPI(session=self._session, timeout=self._timeout)
         return api_call.get_historical_splits_data(api_token=self._api_key, ticker=ticker, date_from=date_from, date_to=date_to)
 
     def get_technical_indicator_data(
@@ -557,7 +570,7 @@ class APIClient:
         For those functions use this parameters to set periods.
         """
 
-        api_call = TechnicalIndicatorAPI()
+        api_call = TechnicalIndicatorAPI(session=self._session, timeout=self._timeout)
         return api_call.get_technical_indicator_data(
             api_token=self._api_key,
             ticker=ticker,
@@ -588,7 +601,7 @@ class APIClient:
         For more information visit: https://eodhistoricaldata.com/financial-apis/live-realtime-stocks-api/
         """
 
-        api_call = LiveStockPricesAPI()
+        api_call = LiveStockPricesAPI(session=self._session, timeout=self._timeout)
         return api_call.get_live_stock_prices(api_token=self._api_key, ticker=ticker, s=s)
 
     def get_us_extended_quotes(self, s, page_limit=None, page_offset=None, fmt=None) -> list:
@@ -618,7 +631,7 @@ class APIClient:
         For more information visit:
           https://eodhd.com/financial-apis/live-v2-for-us-stocks-extended-quotes-2025
         """
-        api_call = LiveExtendedQuotesAPI()
+        api_call = LiveExtendedQuotesAPI(session=self._session, timeout=self._timeout)
         return api_call.get_us_extended_quotes(
             api_token=self._api_key,
             symbols=s,
@@ -645,7 +658,7 @@ class APIClient:
         For more information visit: https://eodhistoricaldata.com/financial-apis/economic-events-data-api/
         """
 
-        api_call = EconomicEventsDataAPI()
+        api_call = EconomicEventsDataAPI(session=self._session, timeout=self._timeout)
         return api_call.get_economic_events_data(
             api_token=self._api_key,
             date_from=date_from,
@@ -672,7 +685,7 @@ class APIClient:
         For more information visit: https://eodhistoricaldata.com/financial-apis/insider-transactions-api/
         """
 
-        api_call = InsiderTransactionsAPI()
+        api_call = InsiderTransactionsAPI(session=self._session, timeout=self._timeout)
         return api_call.get_insider_transactions_data(
             api_token=self._api_key,
             date_from=date_from,
@@ -687,7 +700,7 @@ class APIClient:
         For more information visit: https://eodhistoricaldata.com/financial-apis/stock-etfs-fundamental-data-feeds/
         """
 
-        api_call = FundamentalDataAPI()
+        api_call = FundamentalDataAPI(session=self._session, timeout=self._timeout)
         return api_call.get_fundamentals_data(api_token=self._api_key, ticker=ticker)
 
     def get_eod_splits_dividends_data(self, country="US", type=None, date=None, symbols=None, filter=None) -> list:
@@ -705,7 +718,7 @@ class APIClient:
         For more information visit: https://eodhistoricaldata.com/financial-apis/bulk-api-eod-splits-dividends/
         """
 
-        api_call = BulkEodSplitsDividendsDataAPI()
+        api_call = BulkEodSplitsDividendsDataAPI(session=self._session, timeout=self._timeout)
         return api_call.get_eod_splits_dividends_data(
             api_token=self._api_key,
             country=country,
@@ -725,7 +738,7 @@ class APIClient:
         For more information visit: https://eodhistoricaldata.com/financial-apis/calendar-upcoming-earnings-ipos-and-splits/#Upcoming_Earnings_API
         """
 
-        api_call = UpcomgingEarningsAPI()
+        api_call = UpcomgingEarningsAPI(session=self._session, timeout=self._timeout)
         return api_call.get_upcoming_earnings_data(
             api_token=self._api_key,
             from_date=from_date,
@@ -740,7 +753,7 @@ class APIClient:
             ou can use one symbol: ‘AAPL.US’ or several symbols separated by a comma: ‘AAPL.US, MS’
         For more information visit: https://eodhistoricaldata.com/financial-apis/calendar-upcoming-earnings-ipos-and-splits/#Earnings_Trends_API
         """
-        api_call = EarningTrendsAPI()
+        api_call = EarningTrendsAPI(session=self._session, timeout=self._timeout)
         return api_call.get_earning_trends_data(api_token=self._api_key, symbols=symbols)
 
     def get_upcoming_IPOs_data(self, from_date=None, to_date=None) -> list:
@@ -750,7 +763,7 @@ class APIClient:
         For more information visit: https://eodhistoricaldata.com/financial-apis/calendar-upcoming-earnings-ipos-and-splits/#Upcoming_Earnings_API
         """
 
-        api_call = UpcomingIPOsAPI()
+        api_call = UpcomingIPOsAPI(session=self._session, timeout=self._timeout)
         return api_call.get_upcoming_IPOs_data(api_token=self._api_key, from_date=from_date, to_date=to_date)
 
     def get_upcoming_splits_data(self, from_date=None, to_date=None) -> list:
@@ -760,7 +773,7 @@ class APIClient:
         For more information visit: https://eodhistoricaldata.com/financial-apis/calendar-upcoming-earnings-ipos-and-splits/#Upcoming_Earnings_API
         """
 
-        api_call = UpcomingSplitsAPI()
+        api_call = UpcomingSplitsAPI(session=self._session, timeout=self._timeout)
         return api_call.get_upcoming_splits_data(api_token=self._api_key, from_date=from_date, to_date=to_date)
 
     def get_upcoming_dividends_data(
@@ -786,7 +799,7 @@ class APIClient:
         Note:
             API requires at least one of `symbol` or `date_eq`.
         """
-        api_call = UpcomingDividendsAPI()
+        api_call = UpcomingDividendsAPI(session=self._session, timeout=self._timeout)
         return api_call.get_upcoming_dividends_data(
             api_token=self._api_key,
             symbol=symbol,
@@ -806,7 +819,7 @@ class APIClient:
         All possible indicators will be avaliable on: https://eodhistoricaldata.com/financial-apis/macroeconomics-data-and-macro-indicators-api/
         """
 
-        api_call = MacroIndicatorsAPI()
+        api_call = MacroIndicatorsAPI(session=self._session, timeout=self._timeout)
         return api_call.get_macro_indicators_data(api_token=self._api_key, country=country, indicator=indicator)
 
 
@@ -815,7 +828,7 @@ class APIClient:
         Function returns list of avaliable exchanges
         """
 
-        api_call = ListOfExchangesAPI()
+        api_call = ListOfExchangesAPI(session=self._session, timeout=self._timeout)
         return api_call.get_list_of_exchanges(api_token=self._api_key)
 
     def get_list_of_tickers(self, code: str, delisted: int = 0, include_delisted: bool = False):
@@ -845,7 +858,7 @@ class APIClient:
         if delisted not in (0, 1):
             raise ValueError("Parameter 'delisted' must be 0 or 1.")
 
-        api_call = ListOfExchangesAPI()
+        api_call = ListOfExchangesAPI(session=self._session, timeout=self._timeout)
 
         if not include_delisted:
             return api_call.get_list_of_tickers(api_token=self._api_key, delisted=delisted, code=code)
@@ -883,7 +896,7 @@ class APIClient:
         For more information visit: https://eodhistoricaldata.com/financial-apis/exchanges-api-trading-hours-and-stock-market-holidays/
         """
 
-        api_call = TradingHours_StockMarketHolidays_SymbolsChangeHistoryAPI()
+        api_call = TradingHours_StockMarketHolidays_SymbolsChangeHistoryAPI(session=self._session, timeout=self._timeout)
         return api_call.get_details_trading_hours_stock_market_holidays(api_token=self._api_key, code=code, from_date=from_date, to_date=to_date)
 
     def symbol_change_history(self, from_date=None, to_date=None):
@@ -892,7 +905,7 @@ class APIClient:
             If you need data from Jul 22, 2022, to Aug 10, 2022, you should use from=2022-07-22 and to=2022-08-10.
         For more information visit: https://eodhistoricaldata.com/financial-apis/exchanges-api-trading-hours-and-stock-market-holidays/
         """
-        api_call = TradingHours_StockMarketHolidays_SymbolsChangeHistoryAPI()
+        api_call = TradingHours_StockMarketHolidays_SymbolsChangeHistoryAPI(session=self._session, timeout=self._timeout)
         return api_call.symbol_change_history(api_token=self._api_key, from_date=from_date, to_date=to_date)
 
     def stock_market_screener(self, sort=None, filters=None, limit=None, signals=None, offset=None):
@@ -907,7 +920,7 @@ class APIClient:
             For example, to get 100 symbols starting from 200 you should use limit=100 and offset=200.
         """
 
-        api_call = StockMarketScreenerAPI()
+        api_call = StockMarketScreenerAPI(session=self._session, timeout=self._timeout)
         return api_call.stock_market_screener(
             api_token=self._api_key,
             filters=filters,
@@ -946,7 +959,7 @@ class APIClient:
         List of supported exchanges: https://eodhd.com/financial-apis/exchanges-api-list-of-tickers-and-trading-hours/
         For more information visit: https://eodhd.com/financial-apis/intraday-historical-data-api/
         """
-        api_call = IntradayDataAPI()
+        api_call = IntradayDataAPI(session=self._session, timeout=self._timeout)
         return api_call.get_intraday_historical_data(
             api_token=self._api_key,
             symbol=symbol,
@@ -976,7 +989,7 @@ class APIClient:
         List of supported exchanges: https://eodhd.com/financial-apis/exchanges-api-list-of-tickers-and-trading-hours/
         For more information visit: https://eodhd.com/financial-apis/api-for-historical-data-and-volumes/
         """
-        api_call = EodHistoricalStockMarketDataAPI()
+        api_call = EodHistoricalStockMarketDataAPI(session=self._session, timeout=self._timeout)
         return api_call.get_eod_historical_stock_market_data(
             api_token=self._api_key,
             symbol=symbol,
@@ -1005,7 +1018,7 @@ class APIClient:
                 correspond to ' 2021-08-02 09:35:00 ' and ' 2021-09-02 09:35:00 '.
             limit - the maximum number of ticks will be provided.
         """
-        api_call = StockMarketTickDataAPI()
+        api_call = StockMarketTickDataAPI(session=self._session, timeout=self._timeout)
         return api_call.get_stock_market_tick_data(
             api_token=self._api_key,
             symbol=symbol,
@@ -1024,7 +1037,7 @@ class APIClient:
             limit (not required) - Number of results (default: 50, min: 1, max: 1000)
             offset (not required) - Offset for pagination (default: 0)
         """
-        api_call = FinancialNewsAPI()
+        api_call = FinancialNewsAPI(session=self._session, timeout=self._timeout)
         return api_call.financial_news(
             api_token=self._api_key,
             s=s,
@@ -1041,7 +1054,7 @@ class APIClient:
             s [REQUIRED] - One or more comma-separated tickers (e.g. "BTC-USD.CC,AAPL.US")
             from_date, to_date [NOT REQUIRED] - YYYY-MM-DD
         """
-        api_call = FinancialNewsAPI()
+        api_call = FinancialNewsAPI(session=self._session, timeout=self._timeout)
         return api_call.get_sentiment(
             api_token=self._api_key,
             s=s,
@@ -1059,7 +1072,7 @@ class APIClient:
             date_to   [NOT REQUIRED] - YYYY-MM-DD (maps to filter[date_to])
             limit     [NOT REQUIRED] - Number of top words to return (maps to page[limit])
         """
-        api_call = FinancialNewsAPI()
+        api_call = FinancialNewsAPI(session=self._session, timeout=self._timeout)
         return api_call.news_word_weights(
             api_token=self._api_key,
             s=s,
@@ -1083,7 +1096,7 @@ class APIClient:
             For more information visit: https://eodhd.com/financial-apis/historical-market-capitalization-api/
         """
 
-        api_call = HistoricalMarketCapitalizationAPI()
+        api_call = HistoricalMarketCapitalizationAPI(session=self._session, timeout=self._timeout)
         return api_call.get_historical_market_capitalization_data(
             api_token=self._api_key,
             ticker=ticker,
@@ -1113,7 +1126,7 @@ class APIClient:
                 date="2017-02-01"
             )
         """
-        api_call = CBOEIndexFeedAPI()
+        api_call = CBOEIndexFeedAPI(session=self._session, timeout=self._timeout)
         return api_call.get_cboe_index_data(
             api_token=self._api_key,
             index_code=index_code,
@@ -1134,7 +1147,7 @@ class APIClient:
         Returns:
             dict with keys: meta, data, links (links.next for pagination)
         """
-        api_call = CBOEIndexFeedAPI()
+        api_call = CBOEIndexFeedAPI(session=self._session, timeout=self._timeout)
         return api_call.get_cboe_indices_list(
             api_token=self._api_key,
             fmt=fmt,
@@ -1167,7 +1180,7 @@ class APIClient:
         Returns:
             dict with meta/data/links (links.next for pagination)
         """
-        api_call = IDMappingAPI()
+        api_call = IDMappingAPI(session=self._session, timeout=self._timeout)
         return api_call.get_id_mapping(
             api_token=self._api_key,
             symbol=symbol,
@@ -1193,7 +1206,7 @@ class APIClient:
         Returns:
             list[dict] - list of indices with fields like Code, Name, Constituents, etc.
         """
-        api_call = MPIndicesListAPI()
+        api_call = MPIndicesListAPI(session=self._session, timeout=self._timeout)
         return api_call.get_indices_list(api_token=self._api_key)
 
     def mp_index_components(self, symbol, historical=None, from_date=None, to_date=None):
@@ -1213,7 +1226,7 @@ class APIClient:
             dict - JSON with keys like "General", "Components",
                    and optionally historical keys.
         """
-        api_call = MPIndexComponentsAPI()
+        api_call = MPIndexComponentsAPI(session=self._session, timeout=self._timeout)
         return api_call.get_index_components(
             api_token=self._api_key,
             symbol=symbol,
@@ -1267,7 +1280,7 @@ class APIClient:
         Returns:
             dict with meta, data[], links.next (pagination)
         """
-        api_call = MPUSOptionsContractsAPI()
+        api_call = MPUSOptionsContractsAPI(session=self._session, timeout=self._timeout)
         return api_call.get_us_options_contracts(
             api_token=self._api_key,
             underlying_symbol=underlying_symbol,
@@ -1338,7 +1351,7 @@ class APIClient:
         Returns:
             dict with meta, data[], links.next (pagination)
         """
-        api_call = MPUSOptionsEODAPI()
+        api_call = MPUSOptionsEODAPI(session=self._session, timeout=self._timeout)
         return api_call.get_us_options_eod(
             api_token=self._api_key,
             underlying_symbol=underlying_symbol,
@@ -1375,7 +1388,7 @@ class APIClient:
         Returns:
             dict with meta, data (list of symbols), links.next
         """
-        api_call = MPUSOptionsUnderlyingSymbolsAPI()
+        api_call = MPUSOptionsUnderlyingSymbolsAPI(session=self._session, timeout=self._timeout)
         return api_call.get_us_options_underlyings(
             api_token=self._api_key,
             page_offset=page_offset,
@@ -1387,13 +1400,13 @@ class APIClient:
 class ScannerClient:
     """Scanner class"""
 
-    def __init__(self, api_key: str) -> None:
+    def __init__(self, api_key: str, timeout: tuple = (5.0, 30.0)) -> None:
         # Validate API key
         prog = re_compile(r"^[A-z0-9.]{16,32}$")
         if api_key != "demo" and not prog.match(api_key):
             raise ValueError("API key is invalid")
 
-        self.api = APIClient(api_key)
+        self.api = APIClient(api_key, timeout=timeout)
 
     def scan_markets(
         self,
