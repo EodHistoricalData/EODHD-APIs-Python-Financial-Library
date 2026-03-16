@@ -20,6 +20,8 @@ class WebSocketClient:
         display_candle_1m: bool = False,
         display_candle_5m: bool = False,
         display_candle_1h: bool = False,
+        max_reconnect_attempts: int = 5,
+        reconnect_base_delay: float = 1.0,
     ) -> None:
         # Validate API key
         prog = re.compile(r"^[A-z0-9.]{16,32}$")
@@ -53,6 +55,8 @@ class WebSocketClient:
         self._display_candle_1m = display_candle_1m
         self._display_candle_5m = display_candle_5m
         self._display_candle_1h = display_candle_1h
+        self._max_reconnect_attempts = max_reconnect_attempts
+        self._reconnect_base_delay = reconnect_base_delay
 
         self.running = True
         self.message = None
@@ -68,7 +72,11 @@ class WebSocketClient:
         print("Stopping websocket...")
         self.running = False
         self.stop_event.set()
-        self.thread.join()
+        if self.ws is not None:
+            try:
+                self.ws.close()
+            except Exception:
+                pass
         print("Websocket stopped.")
 
     def _floor_to_nearest_interval(self, timestamp_ms, interval):
@@ -98,158 +106,124 @@ class WebSocketClient:
         return floored_ms
 
     def _collect_data(self):
-        self.ws = websocket.create_connection(f"wss://ws.eodhistoricaldata.com/ws/{self._endpoint}?api_token={self._api_key}")
+        attempt = 0
 
-        # Send the subscription message
-        payload = {
-            "action": "subscribe",
-            "symbols": ",".join(self._symbols),
-        }
-        self.ws.send(json.dumps(payload))
-
-        candle_1m = {}
-        candle_5m = {}
-        candle_1h = {}
-
-        # Collect data until the stop event is set
         while not self.stop_event.is_set():
-            self.message = self.ws.recv()
-            message_json = json.loads(self.message)
+            try:
+                self.ws = websocket.create_connection(
+                    f"wss://ws.eodhistoricaldata.com/ws/{self._endpoint}?api_token={self._api_key}"
+                )
 
-            if self._store_data:
-                self.data_list.append(self.message)
+                # Send the subscription message
+                payload = {
+                    "action": "subscribe",
+                    "symbols": ",".join(self._symbols),
+                }
+                self.ws.send(json.dumps(payload))
 
-            if self._display_stream:
-                print(self.message)
+                # Reset attempt counter on successful connection
+                attempt = 0
 
-            if self._display_candle_1m:
-                if "t" in message_json:
-                    candle_date = self._floor_to_nearest_interval(message_json["t"], "1 minute")
+                # Reset candle state on each (re)connection — partial candles are misleading
+                candle_1m = {}
+                candle_5m = {}
+                candle_1h = {}
 
-                    if "t" in candle_1m and (candle_date != candle_1m["t"]):
-                        print(candle_1m)
+                # Collect data until the stop event is set
+                while not self.stop_event.is_set():
+                    try:
+                        self.message = self.ws.recv()
+                    except (
+                        websocket.WebSocketConnectionClosedException,
+                        websocket.WebSocketException,
+                        ConnectionError,
+                        OSError,
+                    ):
+                        break
 
-                        # New candle
-                        candle_1m = {}
+                    try:
+                        message_json = json.loads(self.message)
+                    except (json.JSONDecodeError, TypeError):
+                        continue
 
-                    candle_1m["t"] = candle_date
+                    if self._store_data:
+                        self.data_list.append(self.message)
 
-                if "s" in message_json:
-                    candle_1m["m"] = message_json["s"]
-                    candle_1m["g"] = 60
+                    if self._display_stream:
+                        print(self.message)
 
-                if "p" in message_json and "o" not in candle_1m:
-                    # Forming candle
-                    candle_1m["o"] = message_json["p"]
-                    candle_1m["h"] = message_json["p"]
-                    candle_1m["l"] = message_json["p"]
-                    candle_1m["c"] = message_json["p"]
-                    if "q" in message_json:
-                        candle_1m["v"] = float(message_json["q"])
-                elif "p" in message_json and "o" in candle_1m:
-                    # Update candle
-                    candle_1m["c"] = message_json["p"]
+                    if self._display_candle_1m:
+                        self._update_candle(candle_1m, message_json, "1 minute", 60)
 
-                    if message_json["p"] > candle_1m["h"]:
-                        candle_1m["h"] = message_json["p"]
+                    if self._display_candle_5m:
+                        self._update_candle(candle_5m, message_json, "5 minutes", 60)
 
-                    if message_json["p"] < candle_1m["l"]:
-                        candle_1m["l"] = message_json["p"]
+                    if self._display_candle_1h:
+                        self._update_candle(candle_1h, message_json, "1 hour", 60)
 
-                    # Sum volume
-                    candle_1m["v"] += float(message_json["q"])
-
-                # Uncomment this to see the candle forming
-                # print(candle_1m)
-
-            if self._display_candle_5m:
-                if "t" in message_json:
-                    candle_date = self._floor_to_nearest_interval(message_json["t"], "5 minutes")
-
-                    if "t" in candle_5m and (candle_date != candle_5m["t"]):
-                        print(candle_5m)
-
-                        # New candle
-                        candle_5m = {}
-
-                    candle_5m["t"] = candle_date
-
-                if "s" in message_json:
-                    candle_5m["m"] = message_json["s"]
-                    candle_5m["g"] = 60
-
-                if "p" in message_json and "o" not in candle_5m:
-                    # Forming candle
-                    candle_5m["o"] = message_json["p"]
-                    candle_5m["h"] = message_json["p"]
-                    candle_5m["l"] = message_json["p"]
-                    candle_5m["c"] = message_json["p"]
-                    if "q" in message_json:
-                        candle_5m["v"] = float(message_json["q"])
-                elif "p" in message_json and "o" in candle_5m:
-                    # Update candle
-                    candle_5m["c"] = message_json["p"]
-
-                    if message_json["p"] > candle_5m["h"]:
-                        candle_5m["h"] = message_json["p"]
-
-                    if message_json["p"] < candle_5m["l"]:
-                        candle_5m["l"] = message_json["p"]
-
-                    # Sum volume
-                    candle_5m["v"] += float(message_json["q"])
-
-                # Uncomment this to see the candle forming
-                # print(candle_5m)
-
-            if self._display_candle_1h:
-                if "t" in message_json:
-                    candle_date = self._floor_to_nearest_interval(message_json["t"], "1 hour")
-
-                    if "t" in candle_1h and (candle_date != candle_1h["t"]):
-                        print(candle_1h)
-
-                        # New candle
-                        candle_1h = {}
-
-                    candle_1h["t"] = candle_date
-
-                if "s" in message_json:
-                    candle_1h["m"] = message_json["s"]
-                    candle_1h["g"] = 60
-
-                if "p" in message_json and "o" not in candle_1h:
-                    # Forming candle
-                    candle_1h["o"] = message_json["p"]
-                    candle_1h["h"] = message_json["p"]
-                    candle_1h["l"] = message_json["p"]
-                    candle_1h["c"] = message_json["p"]
-                    if "q" in message_json:
-                        candle_1h["v"] = float(message_json["q"])
-                elif "p" in message_json and "o" in candle_1h:
-                    # Update candle
-                    candle_1h["c"] = message_json["p"]
-
-                    if message_json["p"] > candle_1h["h"]:
-                        candle_1h["h"] = message_json["p"]
-
-                    if message_json["p"] < candle_1h["l"]:
-                        candle_1h["l"] = message_json["p"]
-
-                    # Sum volume
-                    candle_1h["v"] += float(message_json["q"])
-
-                # Uncomment this to see the candle forming
-                # print(candle_1h)
+            except (
+                websocket.WebSocketException,
+                ConnectionError,
+                OSError,
+            ) as err:
+                if self.stop_event.is_set():
+                    break
+                attempt += 1
+                if attempt > self._max_reconnect_attempts:
+                    print(f"Max reconnect attempts ({self._max_reconnect_attempts}) reached. Giving up.")
+                    self.running = False
+                    self.stop_event.set()
+                    break
+                delay = self._reconnect_base_delay * (2 ** (attempt - 1))
+                print(f"Connection lost ({err}). Reconnecting in {delay:.1f}s (attempt {attempt}/{self._max_reconnect_attempts})...")
+                self.stop_event.wait(delay)
 
         # Close the WebSocket connection
-        self.ws.close()
+        if self.ws is not None:
+            try:
+                self.ws.close()
+            except Exception:
+                pass
+
+    def _update_candle(self, candle, message_json, interval_name, granularity):
+        if "t" in message_json:
+            candle_date = self._floor_to_nearest_interval(message_json["t"], interval_name)
+
+            if "t" in candle and (candle_date != candle["t"]):
+                print(candle)
+                candle.clear()
+
+            candle["t"] = candle_date
+
+        if "s" in message_json:
+            candle["m"] = message_json["s"]
+            candle["g"] = granularity
+
+        if "p" in message_json and "o" not in candle:
+            candle["o"] = message_json["p"]
+            candle["h"] = message_json["p"]
+            candle["l"] = message_json["p"]
+            candle["c"] = message_json["p"]
+            if "q" in message_json:
+                candle["v"] = float(message_json["q"])
+        elif "p" in message_json and "o" in candle:
+            candle["c"] = message_json["p"]
+            if message_json["p"] > candle["h"]:
+                candle["h"] = message_json["p"]
+            if message_json["p"] < candle["l"]:
+                candle["l"] = message_json["p"]
+            candle["v"] += float(message_json["q"])
 
     def _keepalive(self, interval=30):
-        if (self.ws is not None) and (hasattr(self.ws, "connected")):
-            while self.ws.connected:
-                self.ws.ping("keepalive")
-                time.sleep(interval)
+        while not self.stop_event.is_set():
+            self.stop_event.wait(interval)
+            if self.stop_event.is_set():
+                break
+            if self.ws is not None and hasattr(self.ws, "connected") and self.ws.connected:
+                try:
+                    self.ws.ping("keepalive")
+                except Exception:
+                    pass
 
     def start(self):
         self.thread = threading.Thread(target=self._collect_data)
@@ -259,8 +233,13 @@ class WebSocketClient:
 
     def stop(self):
         self.stop_event.set()
-        self.thread.join()
-        self.keepalive.join()
+        if self.ws is not None:
+            try:
+                self.ws.close()
+            except Exception:
+                pass
+        self.thread.join(timeout=5.0)
+        self.keepalive.join(timeout=5.0)
 
     def get_data(self):
         return self.data_list
