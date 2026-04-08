@@ -28,7 +28,6 @@ class CommoditiesAPI(BaseAPI):
     Parameters:
         code      - commodity code (e.g. "WTI", "NATURAL_GAS", "ALL_COMMODITIES")
         interval  - data interval: daily, weekly, monthly (default), quarterly, annual
-        fmt       - response format: "json" or "xml"
     """
 
     def get_commodity_history(
@@ -36,7 +35,6 @@ class CommoditiesAPI(BaseAPI):
         api_token: str,
         code: str,
         interval: str = None,
-        fmt: str = None,
     ):
         """
         Parameters
@@ -47,8 +45,6 @@ class CommoditiesAPI(BaseAPI):
             Commodity code, e.g. "WTI", "NATURAL_GAS", "ALL_COMMODITIES".
         interval : str, optional
             Data interval: "daily", "weekly", "monthly", "quarterly", or "annual".
-        fmt : str, optional
-            "json" or "xml".
 
         Returns
         -------
@@ -67,20 +63,12 @@ class CommoditiesAPI(BaseAPI):
             if interval not in VALID_INTERVALS:
                 raise ValueError(f"Invalid interval '{interval}'. Valid intervals: {sorted(VALID_INTERVALS)}")
 
-        if fmt is not None:
-            fmt = str(fmt).lower()
-            if fmt not in ("json", "xml"):
-                raise ValueError("fmt must be 'json' or 'xml'.")
-
         endpoint = "commodities/historical"
         uri = code
         query_string = ""
 
         if interval is not None:
             query_string += f"&interval={interval}"
-
-        if fmt is not None:
-            query_string += f"&fmt={fmt}"
 
         return self._rest_get_method(
             api_key=api_token,

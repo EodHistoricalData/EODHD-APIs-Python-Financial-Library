@@ -1183,7 +1183,7 @@ class APIClient:
             fmt=fmt,
         )
 
-    def get_commodity_history(self, code, interval=None, fmt=None):
+    def get_commodity_history(self, code, interval=None):
         """
         Commodities Historical Data API
         Endpoint:
@@ -1192,7 +1192,6 @@ class APIClient:
         Args:
             code [REQUIRED] - Commodity code, e.g. "WTI", "NATURAL_GAS", "ALL_COMMODITIES"
             interval [OPTIONAL] - "daily", "weekly", "monthly", "quarterly", or "annual"
-            fmt [OPTIONAL] - "json" or "xml"
 
         Example:
             client.get_commodity_history(code="WTI", interval="monthly")
@@ -1202,7 +1201,6 @@ class APIClient:
             api_token=self._api_key,
             code=code,
             interval=interval,
-            fmt=fmt,
         )
 
     # marketplace endpoints, provided by EODHD
