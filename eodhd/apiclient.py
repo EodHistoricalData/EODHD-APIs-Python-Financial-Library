@@ -40,6 +40,7 @@ from eodhd.APIs import StockMarketTickDataAPI
 from eodhd.APIs import HistoricalMarketCapitalizationAPI
 from eodhd.APIs import CBOEIndexFeedAPI
 from eodhd.APIs import IDMappingAPI
+from eodhd.APIs import CommoditiesAPI
 
 
 #Marketplace endpoints
@@ -1180,6 +1181,26 @@ class APIClient:
             page_limit=page_limit,
             page_offset=page_offset,
             fmt=fmt,
+        )
+
+    def get_commodity_history(self, code, interval=None):
+        """
+        Commodities Historical Data API
+        Endpoint:
+            GET /api/commodities/historical/{code}
+
+        Args:
+            code [REQUIRED] - Commodity code, e.g. "WTI", "NATURAL_GAS", "ALL_COMMODITIES"
+            interval [OPTIONAL] - "daily", "weekly", "monthly", "quarterly", or "annual"
+
+        Example:
+            client.get_commodity_history(code="WTI", interval="monthly")
+        """
+        api_call = CommoditiesAPI()
+        return api_call.get_commodity_history(
+            api_token=self._api_key,
+            code=code,
+            interval=interval,
         )
 
     # marketplace endpoints, provided by EODHD

@@ -25,6 +25,7 @@ from .StockMarketTickDataAPI import StockMarketTickDataAPI
 from .HistoricalMarketCapitalizationAPI import HistoricalMarketCapitalizationAPI
 from .CBOEIndexFeedAPI import CBOEIndexFeedAPI
 from .IDMappingAPI import IDMappingAPI
+from .CommoditiesAPI import CommoditiesAPI
 
 #Marketplace endpoints
 from .MPIndexComponentsAPI import MPIndexComponentsAPI
