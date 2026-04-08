@@ -1190,12 +1190,12 @@ class APIClient:
             GET /api/commodities/historical/{code}
 
         Args:
-            code [REQUIRED] - Commodity code, e.g. "WTI", "GOLD", "ALL_COMMODITIES"
-            interval [OPTIONAL] - "d", "w", "m", "q", or "a"
+            code [REQUIRED] - Commodity code, e.g. "WTI", "NATURAL_GAS", "ALL_COMMODITIES"
+            interval [OPTIONAL] - "daily", "weekly", "monthly", "quarterly", or "annual"
             fmt [OPTIONAL] - "json" or "xml"
 
         Example:
-            client.get_commodity_history(code="WTI", interval="m")
+            client.get_commodity_history(code="WTI", interval="monthly")
         """
         api_call = CommoditiesAPI()
         return api_call.get_commodity_history(

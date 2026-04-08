@@ -4,14 +4,19 @@ from .BaseAPI import BaseAPI
 
 
 VALID_CODES = {
-    "WTI", "BRENT", "NG", "RBOB",
-    "GOLD", "SILVER", "PLATINUM", "PALLADIUM", "COPPER",
-    "WHEAT", "CORN", "SOYBEANS", "SUGAR", "COFFEE", "COTTON", "COCOA", "OATS", "RICE",
-    "LUMBER", "RUBBER", "WOOL",
-    "ALL_COMMODITIES",
+    # Energy
+    "WTI", "BRENT", "NATURAL_GAS", "GASOLINE_US",
+    "DIESEL_USGULF", "HEATING_OIL_NYH", "JET_FUEL_USGULF", "PROPANE_MBTX",
+    "COAL_AU", "URANIUM",
+    # Metals
+    "COPPER", "ALUMINUM",
+    # Agricultural
+    "WHEAT", "CORN", "SUGAR", "COTTON", "COFFEE_MILD_ARABICA", "COFFEE_ROBUSTAS",
+    # Indices
+    "ALL_COMMODITIES", "ALL_COMMODITIES_PRODUCER", "ENERGY_INDEX", "NATGAS_EU", "LNG_ASIA",
 }
 
-VALID_INTERVALS = {"d", "w", "m", "q", "a"}
+VALID_INTERVALS = {"daily", "weekly", "monthly", "quarterly", "annual"}
 
 
 class CommoditiesAPI(BaseAPI):
@@ -21,8 +26,8 @@ class CommoditiesAPI(BaseAPI):
         GET /api/commodities/historical/{code}
 
     Parameters:
-        code      - commodity code (e.g. "WTI", "GOLD", "ALL_COMMODITIES")
-        interval  - data interval: d (daily), w (weekly), m (monthly), q (quarterly), a (annual)
+        code      - commodity code (e.g. "WTI", "NATURAL_GAS", "ALL_COMMODITIES")
+        interval  - data interval: daily, weekly, monthly (default), quarterly, annual
         fmt       - response format: "json" or "xml"
     """
 
@@ -39,9 +44,9 @@ class CommoditiesAPI(BaseAPI):
         api_token : str
             Your EODHD API token.
         code : str
-            Commodity code, e.g. "WTI", "GOLD", "ALL_COMMODITIES".
+            Commodity code, e.g. "WTI", "NATURAL_GAS", "ALL_COMMODITIES".
         interval : str, optional
-            Data interval: "d", "w", "m", "q", or "a".
+            Data interval: "daily", "weekly", "monthly", "quarterly", or "annual".
         fmt : str, optional
             "json" or "xml".
 
@@ -51,7 +56,7 @@ class CommoditiesAPI(BaseAPI):
             JSON response with keys: meta, data, links.
         """
         if not code or not isinstance(code, str):
-            raise ValueError("Parameter 'code' is required and must be a non-empty string (e.g. 'WTI', 'GOLD').")
+            raise ValueError("Parameter 'code' is required and must be a non-empty string (e.g. 'WTI', 'NATURAL_GAS').")
 
         code = code.upper()
         if code not in VALID_CODES:
