@@ -43,6 +43,12 @@ from eodhd.APIs import CBOEIndexFeedAPI
 from eodhd.APIs import IDMappingAPI
 from eodhd.APIs import CommoditiesAPI
 
+# New core endpoints
+from eodhd.APIs import SearchAPI
+from eodhd.APIs import LogoAPI
+from eodhd.APIs import UserAPI
+from eodhd.APIs import BulkFundamentalsAPI
+from eodhd.APIs import TreasuryAPI
 
 #Marketplace endpoints
 from eodhd.APIs import MPIndexComponentsAPI
@@ -50,6 +56,8 @@ from eodhd.APIs import MPIndicesListAPI
 from eodhd.APIs import MPUSOptionsContractsAPI
 from eodhd.APIs import MPUSOptionsEODAPI
 from eodhd.APIs import MPUSOptionsUnderlyingSymbolsAPI
+from eodhd.APIs import MPInvestVerteAPI
+from eodhd.APIs import MPUnicornbayExtrasAPI
 
 # minimal traceback
 sys.tracebacklimit = 1
@@ -1426,6 +1434,156 @@ class APIClient:
             page_limit=page_limit,
             fmt=fmt,
         )
+
+    # ── Phase 1: Core Parity ──────────────────────────────────────
+
+    def search(self, query, limit=None):
+        """
+        Search API
+        Endpoint: GET /api/search/{query}
+
+        Args:
+            query [REQUIRED] - Search query (company name, ticker, ISIN)
+            limit [OPTIONAL] - Maximum number of results
+        """
+        api_call = SearchAPI(session=self._session, timeout=self._timeout)
+        return api_call.search(api_token=self._api_key, query=query, limit=limit)
+
+    def get_logo(self, symbol):
+        """
+        Logo API - PNG
+        Endpoint: GET /api/logo/{symbol}
+
+        Returns: bytes (PNG image data)
+        """
+        api_call = LogoAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_logo(api_token=self._api_key, symbol=symbol)
+
+    def get_logo_svg(self, symbol):
+        """
+        Logo API - SVG
+        Endpoint: GET /api/logo-svg/{symbol}
+
+        Returns: bytes (SVG image data)
+        """
+        api_call = LogoAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_logo_svg(api_token=self._api_key, symbol=symbol)
+
+    def get_user_info(self):
+        """
+        User API
+        Endpoint: GET /api/user
+
+        Returns: dict with subscription details and API usage
+        """
+        api_call = UserAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_user_info(api_token=self._api_key)
+
+    def get_bulk_fundamentals(self, exchange, symbols=None, offset=None, limit=None):
+        """
+        Bulk Fundamentals API
+        Endpoint: GET /api/bulk-fundamentals/{exchange}
+
+        Args:
+            exchange [REQUIRED] - Exchange code (e.g. "US")
+            symbols  [OPTIONAL] - Comma-separated tickers (e.g. "AAPL,MSFT")
+            offset   [OPTIONAL] - Pagination offset
+            limit    [OPTIONAL] - Maximum number of results
+        """
+        api_call = BulkFundamentalsAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_bulk_fundamentals(
+            api_token=self._api_key, exchange=exchange, symbols=symbols, offset=offset, limit=limit,
+        )
+
+    def get_treasury_bill_rates(self, from_date=None, to_date=None):
+        """
+        US Treasury Bill Rates
+        Endpoint: GET /api/ust/bill-rates
+        """
+        api_call = TreasuryAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_treasury_bill_rates(api_token=self._api_key, from_date=from_date, to_date=to_date)
+
+    def get_treasury_yield_rates(self, from_date=None, to_date=None):
+        """
+        US Treasury Yield Curve Rates
+        Endpoint: GET /api/ust/yield-rates
+        """
+        api_call = TreasuryAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_treasury_yield_rates(api_token=self._api_key, from_date=from_date, to_date=to_date)
+
+    def get_treasury_long_term_rates(self, from_date=None, to_date=None):
+        """
+        US Treasury Long-Term Rates
+        Endpoint: GET /api/ust/long-term-rates
+        """
+        api_call = TreasuryAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_treasury_long_term_rates(api_token=self._api_key, from_date=from_date, to_date=to_date)
+
+    def get_treasury_real_yield_rates(self, from_date=None, to_date=None):
+        """
+        US Treasury Real Yield Curve Rates
+        Endpoint: GET /api/ust/real-yield-rates
+        """
+        api_call = TreasuryAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_treasury_real_yield_rates(api_token=self._api_key, from_date=from_date, to_date=to_date)
+
+    # ── Phase 2: Marketplace ──────────────────────────────────────
+
+    # --- InvestVerte ESG (6 methods) ---
+
+    def mp_esg_companies(self):
+        """Marketplace: InvestVerte - Companies list."""
+        api_call = MPInvestVerteAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_companies(api_token=self._api_key)
+
+    def mp_esg_countries(self):
+        """Marketplace: InvestVerte - Countries list."""
+        api_call = MPInvestVerteAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_countries(api_token=self._api_key)
+
+    def mp_esg_sectors(self):
+        """Marketplace: InvestVerte - Sectors list."""
+        api_call = MPInvestVerteAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_sectors(api_token=self._api_key)
+
+    def mp_esg(self, symbol):
+        """Marketplace: InvestVerte - ESG data for a company."""
+        api_call = MPInvestVerteAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_esg(api_token=self._api_key, symbol=symbol)
+
+    def mp_esg_country(self, symbol):
+        """Marketplace: InvestVerte - Country-level ESG data."""
+        api_call = MPInvestVerteAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_country(api_token=self._api_key, symbol=symbol)
+
+    def mp_esg_sector(self, symbol):
+        """Marketplace: InvestVerte - Sector-level ESG data."""
+        api_call = MPInvestVerteAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_sector(api_token=self._api_key, symbol=symbol)
+
+    # --- Unicornbay Extras (2 methods) ---
+
+    def mp_tickdata(self, symbol, from_timestamp=None, to_timestamp=None, page_offset=None, page_limit=None):
+        """
+        Marketplace: Unicornbay - Tick data
+        Endpoint: GET /api/mp/unicornbay/tickdata/ticks
+        """
+        api_call = MPUnicornbayExtrasAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_tickdata(
+            api_token=self._api_key, symbol=symbol,
+            from_timestamp=from_timestamp, to_timestamp=to_timestamp,
+            page_offset=page_offset, page_limit=page_limit,
+        )
+
+    def mp_unicornbay_logo(self, symbol):
+        """
+        Marketplace: Unicornbay - Company logo
+        Endpoint: GET /api/mp/unicornbay/logo/{symbol}
+
+        Returns: bytes (image data)
+        """
+        api_call = MPUnicornbayExtrasAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_logo(api_token=self._api_key, symbol=symbol)
 
 
 class ScannerClient:
