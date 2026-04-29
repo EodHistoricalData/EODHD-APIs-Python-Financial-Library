@@ -27,9 +27,18 @@ from .CBOEIndexFeedAPI import CBOEIndexFeedAPI
 from .IDMappingAPI import IDMappingAPI
 from .CommoditiesAPI import CommoditiesAPI
 
+# New core endpoints
+from .SearchAPI import SearchAPI
+from .LogoAPI import LogoAPI
+from .UserAPI import UserAPI
+from .BulkFundamentalsAPI import BulkFundamentalsAPI
+from .TreasuryAPI import TreasuryAPI
+
 #Marketplace endpoints
 from .MPIndexComponentsAPI import MPIndexComponentsAPI
 from .MPIndicesListAPI import MPIndicesListAPI
 from .MPUSOptionsContractsAPI import  MPUSOptionsContractsAPI
 from .MPUSOptionsEODAPI import MPUSOptionsEODAPI
 from .MPUSOptionsUnderlyingSymbolsAPI import MPUSOptionsUnderlyingSymbolsAPI
+from .MPInvestVerteAPI import MPInvestVerteAPI
+from .MPUnicornbayExtrasAPI import MPUnicornbayExtrasAPI

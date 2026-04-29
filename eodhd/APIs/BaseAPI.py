@@ -64,3 +64,83 @@ class BaseAPI:
                 response_body=resp.text,
                 message=f"Invalid JSON response: {err}",
             ) from err
+
+    def _rest_get_raw(self, api_key: str, endpoint: str = "", uri: str = "", querystring: str = ""):
+        """Generic REST GET returning raw bytes (for binary endpoints like logo)."""
+
+        if endpoint.strip() == "":
+            raise ValueError("endpoint is empty!")
+
+        url = f"{self._api_url}/{endpoint}/{uri}?api_token={api_key}&fmt=json{querystring}"
+
+        try:
+            resp = self._do_get(url)
+        except requests_ConnectionError as err:
+            raise EODHDConnectionError(str(err)) from err
+        except requests_Timeout as err:
+            raise EODHDTimeoutError(str(err)) from err
+
+        if resp.status_code != 200:
+            try:
+                body = resp.text
+            except Exception:
+                body = ""
+
+            try:
+                data = resp.json()
+                message = data.get("message", "") or str(data.get("errors", ""))
+            except (JSONDecodeError, ValueError):
+                message = ""
+
+            raise EODHDHTTPError(
+                status_code=resp.status_code,
+                response_body=body,
+                message=f"({resp.status_code}) {self._api_url} - {message}" if message else f"HTTP {resp.status_code}",
+            )
+
+        return resp.content
+
+    def _rest_post_method(self, api_key: str, endpoint: str = "", uri: str = "", querystring: str = "", body=None):
+        """Generic REST POST with JSON body."""
+
+        if endpoint.strip() == "":
+            raise ValueError("endpoint is empty!")
+
+        url = f"{self._api_url}/{endpoint}/{uri}?api_token={api_key}&fmt=json{querystring}"
+
+        try:
+            if self._session is not None:
+                resp = self._session.post(url, json=body, timeout=self._timeout)
+            else:
+                resp = requests.post(url, json=body, timeout=self._timeout)
+        except requests_ConnectionError as err:
+            raise EODHDConnectionError(str(err)) from err
+        except requests_Timeout as err:
+            raise EODHDTimeoutError(str(err)) from err
+
+        if resp.status_code != 200:
+            try:
+                resp_body = resp.text
+            except Exception:
+                resp_body = ""
+
+            try:
+                data = resp.json()
+                message = data.get("message", "") or str(data.get("errors", ""))
+            except (JSONDecodeError, ValueError):
+                message = ""
+
+            raise EODHDHTTPError(
+                status_code=resp.status_code,
+                response_body=resp_body,
+                message=f"({resp.status_code}) {self._api_url} - {message}" if message else f"HTTP {resp.status_code}",
+            )
+
+        try:
+            return resp.json()
+        except (JSONDecodeError, ValueError) as err:
+            raise EODHDHTTPError(
+                status_code=resp.status_code,
+                response_body=resp.text,
+                message=f"Invalid JSON response: {err}",
+            ) from err
