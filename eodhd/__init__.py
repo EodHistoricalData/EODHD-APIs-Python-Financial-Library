@@ -4,6 +4,7 @@ from eodhd.apiclient import APIClient
 from eodhd.apiclient import ScannerClient
 from eodhd.eodhdgraphs import EODHDGraphs
 from eodhd.websocketclient import WebSocketClient
+from eodhd.errors import EODHDError, EODHDHTTPError, EODHDConnectionError, EODHDTimeoutError
 from eodhd import APIs
 
 
