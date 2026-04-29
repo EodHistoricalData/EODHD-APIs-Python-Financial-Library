@@ -704,6 +704,16 @@ class APIClient:
         api_call = FundamentalDataAPI(session=self._session, timeout=self._timeout)
         return api_call.get_fundamentals_data(api_token=self._api_key, ticker=ticker)
 
+    def get_fundamentals_data_v1_1(self, ticker: str) -> list:
+        """Available args:
+        ticker (required) - consists of two parts: [SYMBOL_NAME].[EXCHANGE_ID]. Example: AAPL.US
+        For more information visit: https://eodhistoricaldata.com/financial-apis/stock-etfs-fundamental-data-feeds/
+        Uses v1.1 endpoint with improved Earnings::Trend data.
+        """
+
+        api_call = FundamentalDataAPI()
+        return api_call.get_fundamentals_data_v1_1(api_token=self._api_key, ticker=ticker)
+
     def get_eod_splits_dividends_data(self, country="US", type=None, date=None, symbols=None, filter=None) -> list:
         """Available args:
         type (not required) - can get splits, empty or dividends.
