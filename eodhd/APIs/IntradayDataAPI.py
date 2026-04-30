@@ -8,14 +8,14 @@ class IntradayDataAPI(BaseAPI):
     def get_intraday_historical_data(self, api_token: str, symbol: str, interval: str,
                                      from_unix_time: str = None, to_unix_time: str = None):
 
-        possible_intervals = ['5m', '1h', '1m']
+        possible_intervals = ['1m', '5m', '15m', '30m', '1h']
 
         endpoint = 'intraday'
 
         if symbol.strip() == "" or symbol is None:
             raise ValueError("Ticker is empty. You need to add ticker to args")
         if interval not in possible_intervals:
-            raise ValueError("Interval must be in ['5m', '1h', '1m'] values")
+            raise ValueError("Interval must be in ['1m', '5m', '15m', '30m', '1h'] values")
 
         uri = f'{symbol}'
         query_string = ''
