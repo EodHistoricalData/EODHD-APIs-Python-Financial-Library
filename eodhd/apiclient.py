@@ -703,24 +703,25 @@ class APIClient:
             limit=limit,
         )
 
-    def get_fundamentals_data(self, ticker: str) -> list:
-        """Available args:
-        ticker (required) - consists of two parts: [SYMBOL_NAME].[EXCHANGE_ID]. Example: AAPL.US
-        For more information visit: https://eodhistoricaldata.com/financial-apis/stock-etfs-fundamental-data-feeds/
-        """
-
+    def get_fundamentals_data(self, ticker: str, filter: str = None, historical: int = None,
+                              from_date: str = None, to_date: str = None, version: int = None,
+                              no_cache: int = None) -> list:
+        """GET /api/fundamentals/{ticker}"""
         api_call = FundamentalDataAPI(session=self._session, timeout=self._timeout)
-        return api_call.get_fundamentals_data(api_token=self._api_key, ticker=ticker)
+        return api_call.get_fundamentals_data(
+            api_token=self._api_key, ticker=ticker, filter=filter, historical=historical,
+            from_date=from_date, to_date=to_date, version=version, no_cache=no_cache,
+        )
 
-    def get_fundamentals_data_v1_1(self, ticker: str) -> list:
-        """Available args:
-        ticker (required) - consists of two parts: [SYMBOL_NAME].[EXCHANGE_ID]. Example: AAPL.US
-        For more information visit: https://eodhistoricaldata.com/financial-apis/stock-etfs-fundamental-data-feeds/
-        Uses v1.1 endpoint with improved Earnings::Trend data.
-        """
-
-        api_call = FundamentalDataAPI()
-        return api_call.get_fundamentals_data_v1_1(api_token=self._api_key, ticker=ticker)
+    def get_fundamentals_data_v1_1(self, ticker: str, filter: str = None, historical: int = None,
+                                    from_date: str = None, to_date: str = None, version: int = None,
+                                    no_cache: int = None) -> list:
+        """GET /api/v1.1/fundamentals/{ticker} — uses improved Earnings::Trend data"""
+        api_call = FundamentalDataAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_fundamentals_data_v1_1(
+            api_token=self._api_key, ticker=ticker, filter=filter, historical=historical,
+            from_date=from_date, to_date=to_date, version=version, no_cache=no_cache,
+        )
 
     def get_eod_splits_dividends_data(self, country="US", type=None, date=None, symbols=None, filter=None) -> list:
         """Available args:
@@ -1437,17 +1438,13 @@ class APIClient:
 
     # ── Phase 1: Core Parity ──────────────────────────────────────
 
-    def search(self, query, limit=None):
-        """
-        Search API
-        Endpoint: GET /api/search/{query}
-
-        Args:
-            query [REQUIRED] - Search query (company name, ticker, ISIN)
-            limit [OPTIONAL] - Maximum number of results
-        """
+    def search(self, query, limit=None, type=None, exchange=None, bonds_only=None):
+        """GET /api/search/{query}"""
         api_call = SearchAPI(session=self._session, timeout=self._timeout)
-        return api_call.search(api_token=self._api_key, query=query, limit=limit)
+        return api_call.search(
+            api_token=self._api_key, query=query, limit=limit,
+            type=type, exchange=exchange, bonds_only=bonds_only,
+        )
 
     def get_logo(self, symbol):
         """
@@ -1492,6 +1489,13 @@ class APIClient:
         """
         api_call = BulkFundamentalsAPI(session=self._session, timeout=self._timeout)
         return api_call.get_bulk_fundamentals(
+            api_token=self._api_key, exchange=exchange, symbols=symbols, offset=offset, limit=limit,
+        )
+
+    def get_bulk_fundamentals_v1_1(self, exchange, symbols=None, offset=None, limit=None):
+        """GET /api/v1.1/bulk-fundamentals/{exchange}"""
+        api_call = BulkFundamentalsAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_bulk_fundamentals_v1_1(
             api_token=self._api_key, exchange=exchange, symbols=symbols, offset=offset, limit=limit,
         )
 
