@@ -33,6 +33,7 @@ from .LogoAPI import LogoAPI
 from .UserAPI import UserAPI
 from .BulkFundamentalsAPI import BulkFundamentalsAPI
 from .TreasuryAPI import TreasuryAPI
+from .ExchangeDetailsV2API import ExchangeDetailsV2API
 
 #Marketplace endpoints
 from .MPIndexComponentsAPI import MPIndexComponentsAPI
