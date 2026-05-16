@@ -49,6 +49,7 @@ from eodhd.APIs import LogoAPI
 from eodhd.APIs import UserAPI
 from eodhd.APIs import BulkFundamentalsAPI
 from eodhd.APIs import TreasuryAPI
+from eodhd.APIs import ExchangeDetailsV2API
 
 #Marketplace endpoints
 from eodhd.APIs import MPIndexComponentsAPI
@@ -927,6 +928,29 @@ class APIClient:
         """
         api_call = TradingHours_StockMarketHolidays_SymbolsChangeHistoryAPI(session=self._session, timeout=self._timeout)
         return api_call.symbol_change_history(api_token=self._api_key, from_date=from_date, to_date=to_date)
+
+    def get_exchange_details_v2_list(self):
+        """Get list of all supported exchanges with basic details (v2).
+
+        Returns parsed JSON (list of dicts).
+        Endpoint: GET /api/v2/exchange-details
+        For more information visit: https://eodhd.com/financial-apis/exchanges-api-trading-hours-and-stock-market-holidays/
+        """
+        api_call = ExchangeDetailsV2API(session=self._session, timeout=self._timeout)
+        return api_call.get_exchange_details_v2_list(api_token=self._api_key)
+
+    def get_exchange_details_v2(self, code: str):
+        """Get detailed exchange information including trading hours, holidays, and early close (v2).
+
+        Parameters:
+            code: Exchange code (e.g. 'US', 'LSE', 'TO')
+
+        Returns parsed JSON (dict).
+        Endpoint: GET /api/v2/exchange-details/{code}
+        For more information visit: https://eodhd.com/financial-apis/exchanges-api-trading-hours-and-stock-market-holidays/
+        """
+        api_call = ExchangeDetailsV2API(session=self._session, timeout=self._timeout)
+        return api_call.get_exchange_details_v2(api_token=self._api_key, code=code)
 
     def stock_market_screener(self, sort=None, filters=None, limit=None, signals=None, offset=None):
         """Available args:
