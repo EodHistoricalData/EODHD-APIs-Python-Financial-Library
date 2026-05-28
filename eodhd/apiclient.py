@@ -1,6 +1,7 @@
 #apiclient.py
 
 import sys
+import warnings
 from json.decoder import JSONDecodeError
 from enum import Enum
 from datetime import datetime
@@ -23,6 +24,7 @@ from eodhd.APIs import LiveStockPricesAPI
 from eodhd.APIs import LiveExtendedQuotesAPI
 from eodhd.APIs import EconomicEventsDataAPI
 from eodhd.APIs import InsiderTransactionsAPI
+from eodhd.APIs import SecFilingsAPI
 from eodhd.APIs import FundamentalDataAPI
 from eodhd.APIs import BulkEodSplitsDividendsDataAPI
 from eodhd.APIs import UpcomgingEarningsAPI
@@ -686,7 +688,9 @@ class APIClient:
         code: str = None,
         limit: int = None,
     ) -> list:
-        """Available args:
+        """Obsolete legacy endpoint. Use get_insider_transactions_v2() for SEC Form 4 data.
+
+        Available args:
         date_from (not required) - date from with format Y-m-d. Example: 2000-01-01
         date_to (not required) - date from with format Y-m-d. Example: 2000-01-01
         code (not required) - to get the data only for Apple Inc (AAPL), use AAPL.US or AAPL ticker code.
@@ -694,6 +698,12 @@ class APIClient:
         limit (not required) - the limit for entries per result, from 1 to 1000. Default value: 100.
         For more information visit: https://eodhistoricaldata.com/financial-apis/insider-transactions-api/
         """
+        warnings.warn(
+            "get_insider_transactions_data() is obsolete. "
+            "Use get_insider_transactions_v2(symbol=...) for SEC Form 4 data.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
         api_call = InsiderTransactionsAPI(session=self._session, timeout=self._timeout)
         return api_call.get_insider_transactions_data(
@@ -702,6 +712,35 @@ class APIClient:
             date_to=date_to,
             code=code,
             limit=limit,
+        )
+
+    def get_insider_transactions_v2(
+        self,
+        symbol: str,
+        page_offset: int = None,
+        page_limit: int = None,
+    ) -> dict:
+        """Insider Transactions v2 (SEC Form 4): GET /sec-filings/{symbol}/form4
+
+        Returns paginated SEC Form 4 filings parsed directly from EDGAR. Each filing
+        contains non-derivative (direct stock) and derivative (options, RSUs, warrants)
+        transactions plus referenced footnotes.
+
+        Args:
+            symbol: US ticker symbol (e.g. 'AAPL' or 'AAPL.US')
+            page_offset: pagination offset (zero-based, default 0)
+            page_limit: page size (1-100, default 20)
+
+        Cost: 10 API calls per request. Plans: Fundamentals and All-In-One.
+
+        For more information visit: https://eodhd.com/financial-apis/insider-transactions-api/
+        """
+        api_call = SecFilingsAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_sec_filings_form4(
+            api_token=self._api_key,
+            symbol=symbol,
+            page_offset=page_offset,
+            page_limit=page_limit,
         )
 
     def get_fundamentals_data(self, ticker: str, filter: str = None, historical: int = None,

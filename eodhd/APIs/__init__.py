@@ -34,6 +34,7 @@ from .UserAPI import UserAPI
 from .BulkFundamentalsAPI import BulkFundamentalsAPI
 from .TreasuryAPI import TreasuryAPI
 from .ExchangeDetailsV2API import ExchangeDetailsV2API
+from .SecFilingsAPI import SecFilingsAPI
 
 #Marketplace endpoints
 from .MPIndexComponentsAPI import MPIndexComponentsAPI
