@@ -706,7 +706,7 @@ class APIClient:
 
     def get_fundamentals_data(self, ticker: str, filter: str = None, historical: int = None,
                               from_date: str = None, to_date: str = None, version: int = None,
-                              no_cache: int = None) -> list:
+                              no_cache: int = None) -> dict:
         """GET /api/fundamentals/{ticker}"""
         api_call = FundamentalDataAPI(session=self._session, timeout=self._timeout)
         return api_call.get_fundamentals_data(
@@ -716,7 +716,7 @@ class APIClient:
 
     def get_fundamentals_data_v1_1(self, ticker: str, filter: str = None, historical: int = None,
                                     from_date: str = None, to_date: str = None, version: int = None,
-                                    no_cache: int = None) -> list:
+                                    no_cache: int = None) -> dict:
         """GET /api/v1.1/fundamentals/{ticker} — uses improved Earnings::Trend data"""
         api_call = FundamentalDataAPI(session=self._session, timeout=self._timeout)
         return api_call.get_fundamentals_data_v1_1(

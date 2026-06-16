@@ -1,6 +1,10 @@
 """Unit tests for FundamentalDataAPI"""
 
+import inspect
+
 import pytest
+
+from eodhd.apiclient import APIClient
 from eodhd.APIs import FundamentalDataAPI
 
 
@@ -25,3 +29,11 @@ def test_get_fundamentals_data_v1_1_method_exists():
     api = FundamentalDataAPI()
     assert hasattr(api, "get_fundamentals_data_v1_1")
     assert callable(api.get_fundamentals_data_v1_1)
+
+
+def test_get_fundamentals_data_return_annotation_is_dict():
+    """The /fundamentals endpoint returns a JSON object, so the client methods
+    must be annotated -> dict, not -> list (see issue #71)."""
+    client = APIClient.__new__(APIClient)
+    assert inspect.signature(client.get_fundamentals_data).return_annotation is dict
+    assert inspect.signature(client.get_fundamentals_data_v1_1).return_annotation is dict
