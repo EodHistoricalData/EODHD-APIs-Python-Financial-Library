@@ -186,6 +186,18 @@ class APIClient:
         else:
             return pd.DataFrame(json_data, index=[0])
 
+    def _strip_free_tier_warning(self, df_data: pd.DataFrame) -> pd.DataFrame:
+        """Free API keys append a 'warning' column (e.g. data limited to one year)
+        to historical responses. Surface the message and drop the column so the
+        downstream fixed-width column relabelling does not raise a confusing
+        "Length mismatch" pandas error (see issue #66)."""
+        if "warning" in df_data.columns:
+            messages = df_data["warning"].dropna()
+            if not messages.empty:
+                self.console.log("EODHD API warning:", messages.iloc[-1])
+            df_data = df_data.drop(columns=["warning"])
+        return df_data
+
     def get_exchanges(self) -> pd.DataFrame:
         """Get supported exchanges"""
 
@@ -313,6 +325,7 @@ class APIClient:
                     sys.exit()
 
             df_data = self._rest_get("eod", symbol, f"&period={interval}&from={str(date_from)}&to={str(date_to)}")
+            df_data = self._strip_free_tier_warning(df_data)
 
             if len(df_data) == 0:
                 columns_eod = [
@@ -424,6 +437,7 @@ class APIClient:
                     sys.exit()
 
             df_data = self._rest_get("intraday", symbol, f"&interval={interval}&from={str(date_from)}&to={str(date_to)}")
+            df_data = self._strip_free_tier_warning(df_data)
 
             if len(df_data) == 0:
                 columns_eod = [
