@@ -196,6 +196,12 @@ class APIClient:
             if not messages.empty:
                 self.console.log("EODHD API warning:", messages.iloc[-1])
             df_data = df_data.drop(columns=["warning"])
+            # Degenerate case: the response carried only the 'warning' column and
+            # no market data. Dropping it leaves a column-less frame; return it
+            # empty (0 rows) so the caller's `len(df_data) == 0` guard handles it
+            # instead of crashing later on a missing date/OHLCV column (#66).
+            if df_data.shape[1] == 0:
+                return df_data.iloc[0:0]
         return df_data
 
     def get_exchanges(self) -> pd.DataFrame:
