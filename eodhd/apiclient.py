@@ -707,7 +707,12 @@ class APIClient:
     def get_fundamentals_data(self, ticker: str, filter: str = None, historical: int = None,
                               from_date: str = None, to_date: str = None, version: int = None,
                               no_cache: int = None) -> dict:
-        """GET /api/fundamentals/{ticker}"""
+        """GET /api/fundamentals/{ticker}
+
+        Returns the parsed JSON object. Note: a ``filter`` that narrows below the
+        top level reshapes the response (e.g. ``General::Code`` returns a scalar
+        string), so the ``-> dict`` hint reflects the common unfiltered / top-level
+        section case rather than every possible filter shape (see issue #71)."""
         api_call = FundamentalDataAPI(session=self._session, timeout=self._timeout)
         return api_call.get_fundamentals_data(
             api_token=self._api_key, ticker=ticker, filter=filter, historical=historical,
@@ -717,7 +722,12 @@ class APIClient:
     def get_fundamentals_data_v1_1(self, ticker: str, filter: str = None, historical: int = None,
                                     from_date: str = None, to_date: str = None, version: int = None,
                                     no_cache: int = None) -> dict:
-        """GET /api/v1.1/fundamentals/{ticker} — uses improved Earnings::Trend data"""
+        """GET /api/v1.1/fundamentals/{ticker} — uses improved Earnings::Trend data
+
+        Returns the parsed JSON object. Note: a ``filter`` that narrows below the
+        top level reshapes the response (e.g. ``General::Code`` returns a scalar
+        string), so the ``-> dict`` hint reflects the common unfiltered / top-level
+        section case rather than every possible filter shape (see issue #71)."""
         api_call = FundamentalDataAPI(session=self._session, timeout=self._timeout)
         return api_call.get_fundamentals_data_v1_1(
             api_token=self._api_key, ticker=ticker, filter=filter, historical=historical,
