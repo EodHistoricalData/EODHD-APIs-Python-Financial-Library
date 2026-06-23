@@ -1,6 +1,7 @@
 """Unit tests for FundamentalDataAPI"""
 
 import inspect
+from typing import Any
 
 import pytest
 
@@ -31,9 +32,11 @@ def test_get_fundamentals_data_v1_1_method_exists():
     assert callable(api.get_fundamentals_data_v1_1)
 
 
-def test_get_fundamentals_data_return_annotation_is_dict():
-    """The /fundamentals endpoint returns a JSON object, so the client methods
-    must be annotated -> dict, not -> list (see issue #71)."""
+def test_get_fundamentals_data_return_annotation_is_any():
+    """A ``filter`` can narrow the response below the top level (e.g.
+    ``General::Code`` returns a scalar string), so the client methods must be
+    annotated -> Any, not -> dict — a dict hint is confidently wrong for the
+    scalar-filter paths and would mislead type-checkers (see issue #71)."""
     client = APIClient.__new__(APIClient)
-    assert inspect.signature(client.get_fundamentals_data).return_annotation is dict
-    assert inspect.signature(client.get_fundamentals_data_v1_1).return_annotation is dict
+    assert inspect.signature(client.get_fundamentals_data).return_annotation is Any
+    assert inspect.signature(client.get_fundamentals_data_v1_1).return_annotation is Any
