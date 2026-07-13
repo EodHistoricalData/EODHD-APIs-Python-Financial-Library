@@ -51,6 +51,7 @@ from eodhd.APIs import UserAPI
 from eodhd.APIs import BulkFundamentalsAPI
 from eodhd.APIs import TreasuryAPI
 from eodhd.APIs import ExchangeDetailsV2API
+from eodhd.APIs import ASXCorporateActionsAPI
 
 #Marketplace endpoints
 from eodhd.APIs import MPIndexComponentsAPI
@@ -1585,6 +1586,35 @@ class APIClient:
         """
         api_call = TreasuryAPI(session=self._session, timeout=self._timeout)
         return api_call.get_treasury_real_yield_rates(api_token=self._api_key, from_date=from_date, to_date=to_date)
+
+    # ------------------------------------------------------------------
+    # ASX Corporate Actions API (/api/asx-corporate-actions)
+    # ------------------------------------------------------------------
+    def get_asx_corporate_actions(self, type=None, symbol=None, date_from=None,
+                                  date_to=None, page_offset=None, page_limit=None):
+        """
+        ASX Corporate Actions
+        Endpoint: GET /api/asx-corporate-actions
+
+        Note: this endpoint uses bare query params, NOT filter[...].
+
+        Args:
+            type      [OPTIONAL] - action type: "dividends"|"splits"|"bonus-issues"|
+                                   "rights-issues"|"buybacks"|"capital-returns"|
+                                   "spp"|"other"
+            symbol    [OPTIONAL] - ASX ticker with .AU suffix, e.g. "PMV.AU"
+            date_from [OPTIONAL] - start date, YYYY-MM-DD
+            date_to   [OPTIONAL] - end date, YYYY-MM-DD
+            page_offset [OPTIONAL] - pagination offset (default 0)
+            page_limit  [OPTIONAL] - pagination limit, 1-1000 (default 100)
+        Returns: dict envelope { data, meta, links }
+        """
+        api_call = ASXCorporateActionsAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_corporate_actions(
+            api_token=self._api_key, type=type, symbol=symbol,
+            date_from=date_from, date_to=date_to,
+            page_offset=page_offset, page_limit=page_limit,
+        )
 
     # ── Phase 2: Marketplace ──────────────────────────────────────
 
