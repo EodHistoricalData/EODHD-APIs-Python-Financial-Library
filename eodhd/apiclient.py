@@ -51,6 +51,7 @@ from eodhd.APIs import UserAPI
 from eodhd.APIs import BulkFundamentalsAPI
 from eodhd.APIs import TreasuryAPI
 from eodhd.APIs import ExchangeDetailsV2API
+from eodhd.APIs import CongressionalTradesAPI
 
 #Marketplace endpoints
 from eodhd.APIs import MPIndexComponentsAPI
@@ -1585,6 +1586,51 @@ class APIClient:
         """
         api_call = TreasuryAPI(session=self._session, timeout=self._timeout)
         return api_call.get_treasury_real_yield_rates(api_token=self._api_key, from_date=from_date, to_date=to_date)
+
+    # ── Congressional Trades ──────────────────────────────────────
+
+    def get_congressional_trades(
+        self,
+        symbol=None,
+        chamber=None,
+        bioguide_id=None,
+        transaction_type=None,
+        transaction_date_from=None,
+        transaction_date_to=None,
+        disclosure_date_from=None,
+        disclosure_date_to=None,
+        page_offset=None,
+        page_limit=None,
+    ):
+        """
+        Congressional Trades API
+        Endpoint: GET /api/congressional-trades
+
+        US Senate and House stock-trade disclosures filed under the STOCK Act.
+        Requires the All-in-One plan; each request costs 10 API calls.
+
+        Optional filters: symbol, chamber ("senate"/"house"), bioguide_id,
+        transaction_type ("purchase"/"sale"/"exchange", comma-separated for
+        multiple), transaction_date_from/to, disclosure_date_from/to.
+        Pagination: page_offset (default 0), page_limit (default 20, max 100).
+
+        Returns:
+            dict with keys: data, meta (total, page), links (next).
+        """
+        api_call = CongressionalTradesAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_congressional_trades(
+            api_token=self._api_key,
+            symbol=symbol,
+            chamber=chamber,
+            bioguide_id=bioguide_id,
+            transaction_type=transaction_type,
+            transaction_date_from=transaction_date_from,
+            transaction_date_to=transaction_date_to,
+            disclosure_date_from=disclosure_date_from,
+            disclosure_date_to=disclosure_date_to,
+            page_offset=page_offset,
+            page_limit=page_limit,
+        )
 
     # ── Phase 2: Marketplace ──────────────────────────────────────
 
