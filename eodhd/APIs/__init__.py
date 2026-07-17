@@ -37,6 +37,7 @@ from .ExchangeDetailsV2API import ExchangeDetailsV2API
 from .CreditSovereignRiskAPI import CreditSovereignRiskAPI
 from .SanctionsAPI import SanctionsAPI
 from .InterestRatesAPI import InterestRatesAPI
+from .RealEstate import RealEstateAPI
 
 #Marketplace endpoints
 from .MPIndexComponentsAPI import MPIndexComponentsAPI
