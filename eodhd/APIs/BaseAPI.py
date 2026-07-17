@@ -1,6 +1,7 @@
 # APIs/BaseAPI.py
 
 from json.decoder import JSONDecodeError
+from urllib.parse import quote
 import requests
 from requests import ConnectionError as requests_ConnectionError
 from requests import Timeout as requests_Timeout
@@ -16,6 +17,77 @@ class BaseAPI:
         self._session = session
         self._timeout = timeout
         self.console = Console()
+
+    @staticmethod
+    def _blank_to_none(value):
+        """Return None for None or a blank/whitespace-only string, else the value unchanged."""
+        if value is None:
+            return None
+        if isinstance(value, str) and value.strip() == "":
+            return None
+        return value
+
+    @staticmethod
+    def _filter(name: str, value) -> str:
+        """Build a URL-encoded &filter[name]=value fragment for deep-object filters.
+
+        None and blank/whitespace-only values are omitted (treated as "no filter"),
+        so an empty string never becomes a spurious &filter[name]= on the wire.
+        """
+        if value is None:
+            return ""
+        text = str(value).strip()
+        if text == "":
+            return ""
+        return f"&filter[{name}]={quote(text, safe='')}"
+
+    @staticmethod
+    def _param(name: str, value) -> str:
+        """Build a URL-encoded &name=value fragment for BARE query params (not filter[...]).
+
+        None and blank/whitespace-only values are omitted.
+        """
+        if value is None:
+            return ""
+        text = str(value).strip()
+        if text == "":
+            return ""
+        return f"&{name}={quote(text, safe='')}"
+
+    @staticmethod
+    def _coerce_page_int(name: str, value) -> int:
+        """Coerce a pagination value to int, rejecting bools and non-whole floats.
+
+        Accepts real ints and integer-valued strings (e.g. "10"); rejects True/False
+        and fractional floats so a request is never silently altered (e.g. 1.9 -> 1)."""
+        if isinstance(value, bool):
+            raise ValueError(f"{name} must be an integer.")
+        try:
+            ivalue = int(value)
+        except (TypeError, ValueError) as err:
+            raise ValueError(f"{name} must be an integer.") from err
+        if isinstance(value, float) and ivalue != value:
+            raise ValueError(f"{name} must be a whole number.")
+        return ivalue
+
+    @staticmethod
+    def _pagination(page_offset=None, page_limit=None) -> str:
+        """Build &page[offset]/&page[limit] fragments, validating the server's bounds
+        (offset >= 0, 1 <= limit <= 100)."""
+        query_string = ""
+        if page_offset is not None:
+            page_offset = BaseAPI._coerce_page_int("page_offset", page_offset)
+            if page_offset < 0:
+                raise ValueError("page_offset must be >= 0.")
+            query_string += f"&page[offset]={page_offset}"
+        if page_limit is not None:
+            page_limit = BaseAPI._coerce_page_int("page_limit", page_limit)
+            if page_limit < 1:
+                raise ValueError("page_limit must be >= 1.")
+            if page_limit > 100:
+                raise ValueError("page_limit must be <= 100.")
+            query_string += f"&page[limit]={page_limit}"
+        return query_string
 
     def _do_get(self, url: str):
         """Execute GET using session if available, else bare requests.get."""

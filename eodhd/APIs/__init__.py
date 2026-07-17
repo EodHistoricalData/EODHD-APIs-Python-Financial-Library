@@ -34,6 +34,9 @@ from .UserAPI import UserAPI
 from .BulkFundamentalsAPI import BulkFundamentalsAPI
 from .TreasuryAPI import TreasuryAPI
 from .ExchangeDetailsV2API import ExchangeDetailsV2API
+from .CreditSovereignRiskAPI import CreditSovereignRiskAPI
+from .SanctionsAPI import SanctionsAPI
+from .InterestRatesAPI import InterestRatesAPI
 
 #Marketplace endpoints
 from .MPIndexComponentsAPI import MPIndexComponentsAPI

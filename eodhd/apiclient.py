@@ -51,6 +51,9 @@ from eodhd.APIs import UserAPI
 from eodhd.APIs import BulkFundamentalsAPI
 from eodhd.APIs import TreasuryAPI
 from eodhd.APIs import ExchangeDetailsV2API
+from eodhd.APIs import CreditSovereignRiskAPI
+from eodhd.APIs import SanctionsAPI
+from eodhd.APIs import InterestRatesAPI
 
 #Marketplace endpoints
 from eodhd.APIs import MPIndexComponentsAPI
@@ -1643,6 +1646,287 @@ class APIClient:
         """
         api_call = MPUnicornbayExtrasAPI(session=self._session, timeout=self._timeout)
         return api_call.get_logo(api_token=self._api_key, symbol=symbol)
+
+    # ------------------------------------------------------------------
+    # Credit & Sovereign Risk API (/api/credit-risk)
+    # ------------------------------------------------------------------
+    def get_sovereign_risk_premium(self, country=None, region=None, as_of=None,
+                                   page_offset=None, page_limit=None):
+        """
+        Credit & Sovereign Risk: sovereign risk premium
+        Endpoint: GET /api/credit-risk/sovereign/risk-premium
+
+        Args:
+            country [OPTIONAL] - filter[country], e.g. "USA" or "US"
+            region  [OPTIONAL] - filter[region]
+            as_of   [OPTIONAL] - filter[as_of], YYYY-MM-DD
+            page_offset / page_limit [OPTIONAL] - pagination
+        Returns: dict envelope { data, meta, links }
+        """
+        api_call = CreditSovereignRiskAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_sovereign_risk_premium(
+            api_token=self._api_key, country=country, region=region, as_of=as_of,
+            page_offset=page_offset, page_limit=page_limit,
+        )
+
+    def get_sovereign_credit_ratings(self, country=None, as_of=None,
+                                     page_offset=None, page_limit=None):
+        """
+        Credit & Sovereign Risk: sovereign credit ratings
+        Endpoint: GET /api/credit-risk/sovereign/credit-ratings
+
+        Args:
+            country [OPTIONAL] - filter[country]
+            as_of   [OPTIONAL] - filter[as_of], YYYY-MM-DD
+            page_offset / page_limit [OPTIONAL] - pagination
+        Returns: dict envelope { data, meta, links }
+        """
+        api_call = CreditSovereignRiskAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_sovereign_credit_ratings(
+            api_token=self._api_key, country=country, as_of=as_of,
+            page_offset=page_offset, page_limit=page_limit,
+        )
+
+    def get_sovereign_cds_spreads(self, country=None, as_of=None,
+                                  page_offset=None, page_limit=None):
+        """
+        Credit & Sovereign Risk: sovereign CDS spreads
+        Endpoint: GET /api/credit-risk/sovereign/cds-spreads
+
+        Args:
+            country [OPTIONAL] - filter[country]
+            as_of   [OPTIONAL] - filter[as_of], YYYY-MM-DD
+            page_offset / page_limit [OPTIONAL] - pagination
+        Returns: dict envelope { data, meta, links }
+        """
+        api_call = CreditSovereignRiskAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_sovereign_cds_spreads(
+            api_token=self._api_key, country=country, as_of=as_of,
+            page_offset=page_offset, page_limit=page_limit,
+        )
+
+    def get_sovereign_default_spreads(self, rating=None, as_of=None,
+                                      page_offset=None, page_limit=None):
+        """
+        Credit & Sovereign Risk: sovereign default spreads
+        Endpoint: GET /api/credit-risk/sovereign/default-spreads
+
+        Args:
+            rating [OPTIONAL] - filter[rating]
+            as_of  [OPTIONAL] - filter[as_of], YYYY-MM-DD
+            page_offset / page_limit [OPTIONAL] - pagination
+        Returns: dict envelope { data, meta, links }
+        """
+        api_call = CreditSovereignRiskAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_sovereign_default_spreads(
+            api_token=self._api_key, rating=rating, as_of=as_of,
+            page_offset=page_offset, page_limit=page_limit,
+        )
+
+    def get_corporate_cmdi(self, from_date=None, to_date=None,
+                           page_offset=None, page_limit=None):
+        """
+        Credit & Sovereign Risk: corporate CMDI (credit market distress index)
+        Endpoint: GET /api/credit-risk/corporate/cmdi
+
+        Args:
+            from_date [OPTIONAL] - filter[from], YYYY-MM-DD
+            to_date   [OPTIONAL] - filter[to], YYYY-MM-DD
+            page_offset / page_limit [OPTIONAL] - pagination
+        Returns: dict envelope { data, meta, links }
+        """
+        api_call = CreditSovereignRiskAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_corporate_cmdi(
+            api_token=self._api_key, from_date=from_date, to_date=to_date,
+            page_offset=page_offset, page_limit=page_limit,
+        )
+
+    def get_corporate_hqm_yields(self, tenor=None, yield_type=None, from_date=None,
+                                 to_date=None, page_offset=None, page_limit=None):
+        """
+        Credit & Sovereign Risk: corporate HQM yields
+        Endpoint: GET /api/credit-risk/corporate/hqm-yields
+
+        Args:
+            tenor      [OPTIONAL] - filter[tenor] (single value or CSV)
+            yield_type [OPTIONAL] - filter[type], "par", "spot" or CSV "spot,par"
+            from_date  [OPTIONAL] - filter[from], YYYY-MM-DD
+            to_date    [OPTIONAL] - filter[to], YYYY-MM-DD
+            page_offset / page_limit [OPTIONAL] - pagination
+        Returns: dict envelope { data, meta, links }
+        """
+        api_call = CreditSovereignRiskAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_corporate_hqm_yields(
+            api_token=self._api_key, tenor=tenor, yield_type=yield_type, from_date=from_date,
+            to_date=to_date, page_offset=page_offset, page_limit=page_limit,
+        )
+
+    def get_cds_market_aggregates(self, metric=None, dimension=None, value=None,
+                                  region=None, from_date=None, to_date=None,
+                                  page_offset=None, page_limit=None):
+        """
+        Credit & Sovereign Risk: CDS market aggregates
+        Endpoint: GET /api/credit-risk/cds-market/aggregates
+
+        Args:
+            metric    [OPTIONAL] - filter[metric], e.g. "gross_notional"
+            dimension [OPTIONAL] - filter[dimension], "grade" or "cleared_status"
+            value     [OPTIONAL] - filter[value], a specific breakdown value
+            region    [OPTIONAL] - filter[region]
+            from_date [OPTIONAL] - filter[from], YYYY-MM-DD
+            to_date   [OPTIONAL] - filter[to], YYYY-MM-DD
+            page_offset / page_limit [OPTIONAL] - pagination
+        Returns: dict envelope { data, meta, links }
+        """
+        api_call = CreditSovereignRiskAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_cds_market_aggregates(
+            api_token=self._api_key, metric=metric, dimension=dimension,
+            value=value, region=region, from_date=from_date, to_date=to_date,
+            page_offset=page_offset, page_limit=page_limit,
+        )
+
+    # ------------------------------------------------------------------
+    # Sanctions API (/api/sanctions)
+    # ------------------------------------------------------------------
+    def get_sanctions_entities(self, q=None, program=None, country=None, source=None,
+                               entity_type=None, active=None,
+                               page_offset=None, page_limit=None):
+        """
+        Sanctions: sanctioned entities
+        Endpoint: GET /api/sanctions/entities
+
+        Note: sanctions endpoints use bare query params, NOT filter[...].
+
+        Args:
+            q           [OPTIONAL] - free-text search (min 2 chars)
+            program     [OPTIONAL] - program
+            country     [OPTIONAL] - country
+            source      [OPTIONAL] - source (currently only "ofac")
+            entity_type [OPTIONAL] - type: "individual"|"entity"|"vessel"|"aircraft"
+            active      [OPTIONAL] - "true"/"false" (bool accepted)
+            page_offset / page_limit [OPTIONAL] - pagination
+        Returns: dict envelope { data, meta, links }
+        """
+        api_call = SanctionsAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_entities(
+            api_token=self._api_key, q=q, program=program, country=country,
+            source=source, entity_type=entity_type, active=active,
+            page_offset=page_offset, page_limit=page_limit,
+        )
+
+    def get_sanctions_vessels(self, q=None, imo=None, flag=None, vessel_type=None,
+                              program=None, source=None,
+                              page_offset=None, page_limit=None):
+        """
+        Sanctions: sanctioned vessels
+        Endpoint: GET /api/sanctions/vessels
+
+        Note: sanctions endpoints use bare query params, NOT filter[...].
+
+        Args:
+            q           [OPTIONAL] - free-text search (min 2 chars)
+            imo         [OPTIONAL] - IMO number
+            flag        [OPTIONAL] - flag
+            vessel_type [OPTIONAL] - vessel type
+            program     [OPTIONAL] - program
+            source      [OPTIONAL] - source (currently only "ofac")
+            page_offset / page_limit [OPTIONAL] - pagination
+        Returns: dict envelope { data, meta, links }
+        """
+        api_call = SanctionsAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_vessels(
+            api_token=self._api_key, q=q, imo=imo, flag=flag, vessel_type=vessel_type,
+            program=program, source=source,
+            page_offset=page_offset, page_limit=page_limit,
+        )
+
+    def get_sanctions_programs(self):
+        """
+        Sanctions: list of sanctions programs
+        Endpoint: GET /api/sanctions/programs
+
+        Takes no params and is not paginated.
+        Returns: dict envelope { data, meta, links }; data items have program, count.
+        """
+        api_call = SanctionsAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_programs(api_token=self._api_key)
+
+    def get_sanctions_sources(self):
+        """
+        Sanctions: list of sanctions sources
+        Endpoint: GET /api/sanctions/sources
+
+        Takes no params and is not paginated.
+        Returns: dict envelope { data, meta, links }; data items have name.
+        """
+        api_call = SanctionsAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_sources(api_token=self._api_key)
+
+    # ------------------------------------------------------------------
+    # Interest Rates & Spreads API (/api/rates, /api/spreads)
+    # ------------------------------------------------------------------
+    def get_reference_rates(self, code=None, currency=None, from_date=None, to_date=None,
+                            page_offset=None, page_limit=None):
+        """
+        Interest Rates: reference rates
+        Endpoint: GET /api/rates/reference-rates
+
+        Args:
+            code      [OPTIONAL] - filter[code]
+            currency  [OPTIONAL] - filter[currency]; currently populated: USD (SOFR),
+                        GBP (SONIA), EUR (ESTR). Uppercased but not restricted client-side.
+            from_date [OPTIONAL] - filter[from], YYYY-MM-DD
+            to_date   [OPTIONAL] - filter[to], YYYY-MM-DD
+            page_offset / page_limit [OPTIONAL] - pagination
+        Returns: dict envelope { data, meta, links }
+        """
+        api_call = InterestRatesAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_reference_rates(
+            api_token=self._api_key, code=code, currency=currency,
+            from_date=from_date, to_date=to_date,
+            page_offset=page_offset, page_limit=page_limit,
+        )
+
+    def get_policy_rates(self, code=None, country=None, central_bank=None,
+                         from_date=None, to_date=None,
+                         page_offset=None, page_limit=None):
+        """
+        Interest Rates: central bank policy rates
+        Endpoint: GET /api/rates/policy-rates
+
+        Args:
+            code         [OPTIONAL] - filter[code]
+            country      [OPTIONAL] - filter[country]
+            central_bank [OPTIONAL] - filter[central_bank]
+            from_date    [OPTIONAL] - filter[from], YYYY-MM-DD
+            to_date      [OPTIONAL] - filter[to], YYYY-MM-DD
+            page_offset / page_limit [OPTIONAL] - pagination
+        Returns: dict envelope { data, meta, links }
+        """
+        api_call = InterestRatesAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_policy_rates(
+            api_token=self._api_key, code=code, country=country,
+            central_bank=central_bank, from_date=from_date, to_date=to_date,
+            page_offset=page_offset, page_limit=page_limit,
+        )
+
+    def get_funding_stress(self, code=None, from_date=None, to_date=None):
+        """
+        Spreads: funding stress spreads
+        Endpoint: GET /api/spreads/funding-stress
+
+        Note: this endpoint does NOT support pagination.
+
+        Args:
+            code      [OPTIONAL] - filter[code]
+            from_date [OPTIONAL] - filter[from], YYYY-MM-DD
+            to_date   [OPTIONAL] - filter[to], YYYY-MM-DD
+        Returns: dict envelope { data, meta, links }
+        """
+        api_call = InterestRatesAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_funding_stress(
+            api_token=self._api_key, code=code, from_date=from_date, to_date=to_date,
+        )
 
 
 class ScannerClient:
