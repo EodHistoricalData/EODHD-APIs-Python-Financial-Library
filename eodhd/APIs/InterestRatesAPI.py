@@ -55,12 +55,12 @@ class InterestRatesAPI(BaseAPI):
         """
         GET /api/rates/reference-rates
 
-        Filters: filter[code], filter[currency] (USD|GBP|EUR), filter[from], filter[to].
+        Filters: filter[code], filter[currency], filter[from], filter[to].
+        Currently populated currencies are USD (SOFR), GBP (SONIA) and EUR (ESTR);
+        the value is uppercased but not restricted client-side, since the server
+        does not enforce a fixed currency set.
         Fields: date, code, currency, rate_type, rate, source, source_series_id.
         """
-        if currency is not None and str(currency).upper() not in ("USD", "GBP", "EUR"):
-            raise ValueError("currency must be one of 'USD', 'GBP', 'EUR'.")
-
         query_string = ""
         query_string += self._filter("code", code)
         if currency is not None:

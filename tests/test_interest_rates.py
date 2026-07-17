@@ -48,10 +48,23 @@ def test_reference_rates_pagination(mock_session):
     assert "page[limit]=100" in call_url
 
 
-def test_reference_rates_invalid_currency(mock_session):
+def test_reference_rates_currency_uppercased(mock_session):
+    _mock_response(mock_session)
     api = _make_api(mock_session)
-    with pytest.raises(ValueError):
-        api.get_reference_rates(api_token="test1234567890123456", currency="JPY")
+    api.get_reference_rates(api_token="test1234567890123456", currency="usd")
+
+    call_url = mock_session.get.call_args[0][0]
+    assert "filter[currency]=USD" in call_url
+
+
+def test_reference_rates_currency_not_restricted(mock_session):
+    # currency is not enum-restricted server-side; the client must not reject it
+    _mock_response(mock_session)
+    api = _make_api(mock_session)
+    api.get_reference_rates(api_token="test1234567890123456", currency="JPY")
+
+    call_url = mock_session.get.call_args[0][0]
+    assert "filter[currency]=JPY" in call_url
 
 
 def test_policy_rates_url(mock_session):

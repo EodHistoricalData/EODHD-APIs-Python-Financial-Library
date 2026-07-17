@@ -1761,8 +1761,9 @@ class APIClient:
             to_date=to_date, page_offset=page_offset, page_limit=page_limit,
         )
 
-    def get_cds_market_aggregates(self, metric=None, dimension=None, from_date=None,
-                                  to_date=None, page_offset=None, page_limit=None):
+    def get_cds_market_aggregates(self, metric=None, dimension=None, value=None,
+                                  region=None, from_date=None, to_date=None,
+                                  page_offset=None, page_limit=None):
         """
         Credit & Sovereign Risk: CDS market aggregates
         Endpoint: GET /api/credit-risk/cds-market/aggregates
@@ -1770,6 +1771,8 @@ class APIClient:
         Args:
             metric    [OPTIONAL] - filter[metric], e.g. "gross_notional"
             dimension [OPTIONAL] - filter[dimension], "grade" or "cleared_status"
+            value     [OPTIONAL] - filter[value], a specific breakdown value
+            region    [OPTIONAL] - filter[region]
             from_date [OPTIONAL] - filter[from], YYYY-MM-DD
             to_date   [OPTIONAL] - filter[to], YYYY-MM-DD
             page_offset / page_limit [OPTIONAL] - pagination
@@ -1778,7 +1781,7 @@ class APIClient:
         api_call = CreditSovereignRiskAPI(session=self._session, timeout=self._timeout)
         return api_call.get_cds_market_aggregates(
             api_token=self._api_key, metric=metric, dimension=dimension,
-            from_date=from_date, to_date=to_date,
+            value=value, region=region, from_date=from_date, to_date=to_date,
             page_offset=page_offset, page_limit=page_limit,
         )
 
@@ -1837,29 +1840,27 @@ class APIClient:
             page_offset=page_offset, page_limit=page_limit,
         )
 
-    def get_sanctions_programs(self, page_offset=None, page_limit=None):
+    def get_sanctions_programs(self):
         """
         Sanctions: list of sanctions programs
         Endpoint: GET /api/sanctions/programs
 
+        Takes no params and is not paginated.
         Returns: dict envelope { data, meta, links }; data items have program, count.
         """
         api_call = SanctionsAPI(session=self._session, timeout=self._timeout)
-        return api_call.get_programs(
-            api_token=self._api_key, page_offset=page_offset, page_limit=page_limit,
-        )
+        return api_call.get_programs(api_token=self._api_key)
 
-    def get_sanctions_sources(self, page_offset=None, page_limit=None):
+    def get_sanctions_sources(self):
         """
         Sanctions: list of sanctions sources
         Endpoint: GET /api/sanctions/sources
 
+        Takes no params and is not paginated.
         Returns: dict envelope { data, meta, links }; data items have name.
         """
         api_call = SanctionsAPI(session=self._session, timeout=self._timeout)
-        return api_call.get_sources(
-            api_token=self._api_key, page_offset=page_offset, page_limit=page_limit,
-        )
+        return api_call.get_sources(api_token=self._api_key)
 
     # ------------------------------------------------------------------
     # Interest Rates & Spreads API (/api/rates, /api/spreads)

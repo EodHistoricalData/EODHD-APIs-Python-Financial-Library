@@ -174,44 +174,30 @@ class SanctionsAPI(BaseAPI):
             querystring=query_string,
         )
 
-    def get_programs(
-        self,
-        api_token: str,
-        page_offset: int = None,
-        page_limit: int = None,
-    ):
+    def get_programs(self, api_token: str):
         """
         GET /api/sanctions/programs
 
-        No filter params (pagination only).
+        No params and no pagination (the server ignores any query params here).
         Fields: program, count.
         """
-        query_string = self._pagination(page_offset, page_limit)
-
         return self._rest_get_method(
             api_key=api_token,
             endpoint="sanctions",
             uri="programs",
-            querystring=query_string,
+            querystring="",
         )
 
-    def get_sources(
-        self,
-        api_token: str,
-        page_offset: int = None,
-        page_limit: int = None,
-    ):
+    def get_sources(self, api_token: str):
         """
         GET /api/sanctions/sources
 
-        No filter params (pagination only).
+        No params and no pagination (the server ignores any query params here).
         Fields: name.
         """
-        query_string = self._pagination(page_offset, page_limit)
-
         return self._rest_get_method(
             api_key=api_token,
             endpoint="sanctions",
             uri="sources",
-            querystring=query_string,
+            querystring="",
         )

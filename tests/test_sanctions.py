@@ -131,11 +131,12 @@ def test_vessels_invalid_source(mock_session):
 def test_programs_url(mock_session):
     _mock_response(mock_session)
     api = _make_api(mock_session)
-    api.get_programs(api_token="test1234567890123456", page_limit=100)
+    api.get_programs(api_token="test1234567890123456")
 
     call_url = mock_session.get.call_args[0][0]
     assert "/sanctions/programs" in call_url
-    assert "page[limit]=100" in call_url
+    # programs is not paginated server-side; no page params are sent
+    assert "page[" not in call_url
 
 
 def test_sources_url(mock_session):
@@ -145,6 +146,7 @@ def test_sources_url(mock_session):
 
     call_url = mock_session.get.call_args[0][0]
     assert "/sanctions/sources" in call_url
+    assert "page[" not in call_url
 
 
 def test_invalid_pagination(mock_session):

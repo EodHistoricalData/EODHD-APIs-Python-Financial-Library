@@ -107,17 +107,38 @@ def test_hqm_yields_invalid_type(mock_session):
         api.get_corporate_hqm_yields(api_token="test1234567890123456", type="bad")
 
 
+def test_hqm_yields_csv_type(mock_session):
+    # server uses CsvIn(['spot','par']) -> a comma-separated combo is valid
+    _mock_response(mock_session)
+    api = _make_api(mock_session)
+    api.get_corporate_hqm_yields(api_token="test1234567890123456", type="Spot, Par")
+
+    call_url = mock_session.get.call_args[0][0]
+    # normalised to lowercase, comma-joined, URL-encoded (',' -> %2C)
+    assert "filter[type]=spot%2Cpar" in call_url
+
+
+def test_hqm_yields_partial_invalid_csv_type(mock_session):
+    api = _make_api(mock_session)
+    with pytest.raises(ValueError):
+        api.get_corporate_hqm_yields(api_token="test1234567890123456", type="spot,bad")
+
+
 def test_cds_market_aggregates_url(mock_session):
     _mock_response(mock_session)
     api = _make_api(mock_session)
     api.get_cds_market_aggregates(
         api_token="test1234567890123456", metric="gross_notional", dimension="grade",
+        value="Investment Grade", region="North America",
     )
 
     call_url = mock_session.get.call_args[0][0]
     assert "/credit-risk/cds-market/aggregates" in call_url
     assert "filter[metric]=gross_notional" in call_url
     assert "filter[dimension]=grade" in call_url
+    # value and region filters are supported (verified vs prometheus-web)
+    assert "filter[value]=Investment%20Grade" in call_url
+    assert "filter[region]=North%20America" in call_url
 
 
 def test_invalid_pagination(mock_session):

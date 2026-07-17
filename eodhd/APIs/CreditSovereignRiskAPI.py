@@ -191,15 +191,21 @@ class CreditSovereignRiskAPI(BaseAPI):
         GET /api/credit-risk/corporate/hqm-yields
 
         Filters: filter[tenor], filter[type] (par|spot), filter[from], filter[to].
+        Both filter[tenor] and filter[type] accept a comma-separated list
+        (e.g. type="spot,par"), matching the server's CsvIn validation.
         Fields: series_id, tenor_years, yield_type, as_of_date, yield_value, source.
         """
-        if type is not None and str(type).lower() not in ("par", "spot"):
-            raise ValueError("type must be 'par' or 'spot'.")
+        type_value = None
+        if type is not None:
+            parts = [p.strip().lower() for p in str(type).split(",") if p.strip()]
+            if not parts or any(p not in ("par", "spot") for p in parts):
+                raise ValueError("type must be 'par', 'spot', or a comma-separated combination (e.g. 'spot,par').")
+            type_value = ",".join(parts)
 
         query_string = ""
         query_string += self._filter("tenor", tenor)
-        if type is not None:
-            query_string += self._filter("type", str(type).lower())
+        if type_value is not None:
+            query_string += self._filter("type", type_value)
         query_string += self._filter("from", from_date)
         query_string += self._filter("to", to_date)
         query_string += self._pagination(page_offset, page_limit)
@@ -216,6 +222,8 @@ class CreditSovereignRiskAPI(BaseAPI):
         api_token: str,
         metric: str = None,
         dimension: str = None,
+        value: str = None,
+        region: str = None,
         from_date: str = None,
         to_date: str = None,
         page_offset: int = None,
@@ -225,13 +233,15 @@ class CreditSovereignRiskAPI(BaseAPI):
         GET /api/credit-risk/cds-market/aggregates
 
         Filters: filter[metric] (gross_notional), filter[dimension] (grade|cleared_status),
-        filter[from], filter[to].
+        filter[value] (a specific breakdown value), filter[region], filter[from], filter[to].
         Fields: as_of_date, release_date, metric, breakdown_dimension,
         breakdown_value, region, usd_notional_mn, source.
         """
         query_string = ""
         query_string += self._filter("metric", metric)
         query_string += self._filter("dimension", dimension)
+        query_string += self._filter("value", value)
+        query_string += self._filter("region", region)
         query_string += self._filter("from", from_date)
         query_string += self._filter("to", to_date)
         query_string += self._pagination(page_offset, page_limit)
