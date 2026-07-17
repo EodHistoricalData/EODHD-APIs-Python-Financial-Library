@@ -1,8 +1,9 @@
 """Tests for SanctionsAPI.
 
 Note: sanctions endpoints use BARE query params (program=, q=, type=, active=,
-imo=, flag=, vessel_type=, source=, country=), NOT filter[...]. Pagination still
-uses page[offset]/page[limit].
+imo=, flag=, vessel_type=, source=, country=), NOT filter[...]. Pagination
+(page[offset]/page[limit]) applies to entities and vessels only; programs and
+sources take no params and are not paginated.
 """
 
 import pytest
@@ -190,3 +191,23 @@ def test_blank_value_omitted(mock_session):
 
     call_url = mock_session.get.call_args[0][0]
     assert "&program=" not in call_url
+
+
+def test_blank_q_omitted_not_error(mock_session):
+    # a blank q must be treated as absent (omitted), not rejected as < 2 chars
+    _mock_response(mock_session)
+    api = _make_api(mock_session)
+    api.get_entities(api_token="test1234567890123456", q="   ")
+
+    call_url = mock_session.get.call_args[0][0]
+    assert "&q=" not in call_url
+
+
+def test_blank_source_omitted_not_error(mock_session):
+    # a blank source must be omitted, not rejected against the enum
+    _mock_response(mock_session)
+    api = _make_api(mock_session)
+    api.get_entities(api_token="test1234567890123456", source="   ")
+
+    call_url = mock_session.get.call_args[0][0]
+    assert "&source=" not in call_url

@@ -1741,23 +1741,23 @@ class APIClient:
             page_offset=page_offset, page_limit=page_limit,
         )
 
-    def get_corporate_hqm_yields(self, tenor=None, type=None, from_date=None,
+    def get_corporate_hqm_yields(self, tenor=None, yield_type=None, from_date=None,
                                  to_date=None, page_offset=None, page_limit=None):
         """
         Credit & Sovereign Risk: corporate HQM yields
         Endpoint: GET /api/credit-risk/corporate/hqm-yields
 
         Args:
-            tenor     [OPTIONAL] - filter[tenor]
-            type      [OPTIONAL] - filter[type], "par" or "spot"
-            from_date [OPTIONAL] - filter[from], YYYY-MM-DD
-            to_date   [OPTIONAL] - filter[to], YYYY-MM-DD
+            tenor      [OPTIONAL] - filter[tenor] (single value or CSV)
+            yield_type [OPTIONAL] - filter[type], "par", "spot" or CSV "spot,par"
+            from_date  [OPTIONAL] - filter[from], YYYY-MM-DD
+            to_date    [OPTIONAL] - filter[to], YYYY-MM-DD
             page_offset / page_limit [OPTIONAL] - pagination
         Returns: dict envelope { data, meta, links }
         """
         api_call = CreditSovereignRiskAPI(session=self._session, timeout=self._timeout)
         return api_call.get_corporate_hqm_yields(
-            api_token=self._api_key, tenor=tenor, type=type, from_date=from_date,
+            api_token=self._api_key, tenor=tenor, yield_type=yield_type, from_date=from_date,
             to_date=to_date, page_offset=page_offset, page_limit=page_limit,
         )
 
@@ -1873,7 +1873,8 @@ class APIClient:
 
         Args:
             code      [OPTIONAL] - filter[code]
-            currency  [OPTIONAL] - filter[currency], "USD", "GBP" or "EUR"
+            currency  [OPTIONAL] - filter[currency]; currently populated: USD (SOFR),
+                        GBP (SONIA), EUR (ESTR). Uppercased but not restricted client-side.
             from_date [OPTIONAL] - filter[from], YYYY-MM-DD
             to_date   [OPTIONAL] - filter[to], YYYY-MM-DD
             page_offset / page_limit [OPTIONAL] - pagination

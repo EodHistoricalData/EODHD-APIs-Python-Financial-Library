@@ -93,7 +93,7 @@ def test_corporate_cmdi_url(mock_session):
 def test_hqm_yields_url(mock_session):
     _mock_response(mock_session)
     api = _make_api(mock_session)
-    api.get_corporate_hqm_yields(api_token="test1234567890123456", tenor="10", type="par")
+    api.get_corporate_hqm_yields(api_token="test1234567890123456", tenor="10", yield_type="par")
 
     call_url = mock_session.get.call_args[0][0]
     assert "/credit-risk/corporate/hqm-yields" in call_url
@@ -104,14 +104,14 @@ def test_hqm_yields_url(mock_session):
 def test_hqm_yields_invalid_type(mock_session):
     api = _make_api(mock_session)
     with pytest.raises(ValueError):
-        api.get_corporate_hqm_yields(api_token="test1234567890123456", type="bad")
+        api.get_corporate_hqm_yields(api_token="test1234567890123456", yield_type="bad")
 
 
 def test_hqm_yields_csv_type(mock_session):
     # server uses CsvIn(['spot','par']) -> a comma-separated combo is valid
     _mock_response(mock_session)
     api = _make_api(mock_session)
-    api.get_corporate_hqm_yields(api_token="test1234567890123456", type="Spot, Par")
+    api.get_corporate_hqm_yields(api_token="test1234567890123456", yield_type="Spot, Par")
 
     call_url = mock_session.get.call_args[0][0]
     # normalised to lowercase, comma-joined, URL-encoded (',' -> %2C)
@@ -121,7 +121,39 @@ def test_hqm_yields_csv_type(mock_session):
 def test_hqm_yields_partial_invalid_csv_type(mock_session):
     api = _make_api(mock_session)
     with pytest.raises(ValueError):
-        api.get_corporate_hqm_yields(api_token="test1234567890123456", type="spot,bad")
+        api.get_corporate_hqm_yields(api_token="test1234567890123456", yield_type="spot,bad")
+
+
+def test_hqm_yields_blank_type_omitted(mock_session):
+    # a blank/empty yield_type is treated as "no filter", not a ValueError
+    _mock_response(mock_session)
+    api = _make_api(mock_session)
+    api.get_corporate_hqm_yields(api_token="test1234567890123456", yield_type="  ,  ")
+
+    call_url = mock_session.get.call_args[0][0]
+    assert "filter[type]" not in call_url
+
+
+def test_blank_filter_omitted(mock_session):
+    # empty/whitespace-only filter values are omitted, not sent as &filter[key]=
+    _mock_response(mock_session)
+    api = _make_api(mock_session)
+    api.get_sovereign_credit_ratings(api_token="test1234567890123456", country="   ")
+
+    call_url = mock_session.get.call_args[0][0]
+    assert "filter[country]" not in call_url
+
+
+def test_pagination_upper_bound(mock_session):
+    api = _make_api(mock_session)
+    with pytest.raises(ValueError):
+        api.get_sovereign_risk_premium(api_token="test1234567890123456", page_limit=101)
+
+
+def test_pagination_rejects_bool(mock_session):
+    api = _make_api(mock_session)
+    with pytest.raises(ValueError):
+        api.get_sovereign_risk_premium(api_token="test1234567890123456", page_offset=True)
 
 
 def test_cds_market_aggregates_url(mock_session):

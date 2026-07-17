@@ -1,7 +1,5 @@
 # APIs/InterestRatesAPI.py
 
-from urllib.parse import quote
-
 from .BaseAPI import BaseAPI
 
 
@@ -19,28 +17,6 @@ class InterestRatesAPI(BaseAPI):
     - rates/* endpoints paginate with page[offset]/page[limit].
     - spreads/funding-stress does NOT support pagination.
     """
-
-    @staticmethod
-    def _filter(name: str, value) -> str:
-        """Build a URL-encoded &filter[name]=value fragment (empty if value is None)."""
-        if value is None:
-            return ""
-        return f"&filter[{name}]={quote(str(value), safe='')}"
-
-    @staticmethod
-    def _pagination(page_offset: int = None, page_limit: int = None) -> str:
-        query_string = ""
-        if page_offset is not None:
-            page_offset = int(page_offset)
-            if page_offset < 0:
-                raise ValueError("page_offset must be >= 0.")
-            query_string += f"&page[offset]={page_offset}"
-        if page_limit is not None:
-            page_limit = int(page_limit)
-            if page_limit < 1:
-                raise ValueError("page_limit must be >= 1.")
-            query_string += f"&page[limit]={page_limit}"
-        return query_string
 
     def get_reference_rates(
         self,

@@ -1,7 +1,5 @@
 # APIs/CreditSovereignRiskAPI.py
 
-from urllib.parse import quote
-
 from .BaseAPI import BaseAPI
 
 
@@ -21,29 +19,10 @@ class CreditSovereignRiskAPI(BaseAPI):
     - All endpoints return a JSON envelope { data, meta, links }.
     - Filtering uses filter[...] deep-object params.
     - Pagination uses page[offset] and page[limit].
+    - Value-level validation is limited to the small closed enums the server
+      guarantees (e.g. HQM yield type par/spot); other filter values (metric,
+      dimension, tenor grid, dates, lengths) are validated server-side.
     """
-
-    @staticmethod
-    def _filter(name: str, value) -> str:
-        """Build a URL-encoded &filter[name]=value fragment (empty if value is None)."""
-        if value is None:
-            return ""
-        return f"&filter[{name}]={quote(str(value), safe='')}"
-
-    @staticmethod
-    def _pagination(page_offset: int = None, page_limit: int = None) -> str:
-        query_string = ""
-        if page_offset is not None:
-            page_offset = int(page_offset)
-            if page_offset < 0:
-                raise ValueError("page_offset must be >= 0.")
-            query_string += f"&page[offset]={page_offset}"
-        if page_limit is not None:
-            page_limit = int(page_limit)
-            if page_limit < 1:
-                raise ValueError("page_limit must be >= 1.")
-            query_string += f"&page[limit]={page_limit}"
-        return query_string
 
     def get_sovereign_risk_premium(
         self,
@@ -181,7 +160,7 @@ class CreditSovereignRiskAPI(BaseAPI):
         self,
         api_token: str,
         tenor: str = None,
-        type: str = None,
+        yield_type: str = None,
         from_date: str = None,
         to_date: str = None,
         page_offset: int = None,
@@ -192,20 +171,22 @@ class CreditSovereignRiskAPI(BaseAPI):
 
         Filters: filter[tenor], filter[type] (par|spot), filter[from], filter[to].
         Both filter[tenor] and filter[type] accept a comma-separated list
-        (e.g. type="spot,par"), matching the server's CsvIn validation.
+        (e.g. yield_type="spot,par"), matching the server's CsvIn validation.
+        `yield_type` is serialised to filter[type]; the tenor grid is validated
+        server-side. A blank/empty value is treated as "no filter", not an error.
         Fields: series_id, tenor_years, yield_type, as_of_date, yield_value, source.
         """
-        type_value = None
-        if type is not None:
-            parts = [p.strip().lower() for p in str(type).split(",") if p.strip()]
-            if not parts or any(p not in ("par", "spot") for p in parts):
-                raise ValueError("type must be 'par', 'spot', or a comma-separated combination (e.g. 'spot,par').")
-            type_value = ",".join(parts)
+        yield_type_value = None
+        if yield_type is not None:
+            parts = [p.strip().lower() for p in str(yield_type).split(",") if p.strip()]
+            if parts and any(p not in ("par", "spot") for p in parts):
+                raise ValueError("yield_type must be 'par', 'spot', or a comma-separated combination (e.g. 'spot,par').")
+            if parts:
+                yield_type_value = ",".join(parts)
 
         query_string = ""
         query_string += self._filter("tenor", tenor)
-        if type_value is not None:
-            query_string += self._filter("type", type_value)
+        query_string += self._filter("type", yield_type_value)
         query_string += self._filter("from", from_date)
         query_string += self._filter("to", to_date)
         query_string += self._pagination(page_offset, page_limit)

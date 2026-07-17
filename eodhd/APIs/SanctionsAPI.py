@@ -1,7 +1,5 @@
 # APIs/SanctionsAPI.py
 
-from urllib.parse import quote
-
 from .BaseAPI import BaseAPI
 
 
@@ -19,55 +17,29 @@ class SanctionsAPI(BaseAPI):
     - Filtering uses BARE query params (e.g. program=, q=, type=), NOT filter[...].
       (This differs from other EODHD endpoints; verified against prometheus-web
       request classes + live production.)
-    - Pagination uses page[offset] and page[limit].
+    - Pagination (page[offset]/page[limit]) applies to entities and vessels only;
+      programs and sources take no params and are not paginated.
     """
 
     _SOURCE_VALUES = ("ofac",)
     _ENTITY_TYPE_VALUES = ("individual", "entity", "vessel", "aircraft")
 
     @staticmethod
-    def _param(name: str, value) -> str:
-        """Build a URL-encoded &name=value fragment.
-
-        Returns "" for None or blank/whitespace-only values (so an empty string
-        is treated as "omit the param", not "send &name="). Values are
-        URL-encoded; the key is a bare query param (not filter[...])."""
-        if value is None:
-            return ""
-        text = str(value).strip()
-        if text == "":
-            return ""
-        return f"&{name}={quote(text, safe='')}"
-
-    @staticmethod
     def _normalize_active(active):
         """Normalise the `active` filter to the API's "true"/"false" scalar.
 
-        Accepts Python bools, or the strings "true"/"false" (any case). Anything
-        else raises ValueError. Returns None if `active` is None."""
+        Accepts Python bools, or the strings "true"/"false" (any case). A blank
+        value is treated as absent (returns None); anything else raises ValueError."""
         if active is None:
             return None
         if isinstance(active, bool):
             return "true" if active else "false"
         text = str(active).strip().lower()
+        if text == "":
+            return None
         if text not in ("true", "false"):
             raise ValueError("active must be a bool or one of 'true'/'false'.")
         return text
-
-    @staticmethod
-    def _pagination(page_offset: int = None, page_limit: int = None) -> str:
-        query_string = ""
-        if page_offset is not None:
-            page_offset = int(page_offset)
-            if page_offset < 0:
-                raise ValueError("page_offset must be >= 0.")
-            query_string += f"&page[offset]={page_offset}"
-        if page_limit is not None:
-            page_limit = int(page_limit)
-            if page_limit < 1:
-                raise ValueError("page_limit must be >= 1.")
-            query_string += f"&page[limit]={page_limit}"
-        return query_string
 
     def get_entities(
         self,
@@ -97,6 +69,9 @@ class SanctionsAPI(BaseAPI):
         Fields: source, source_uid, entity_type, name, programs[], country,
         remarks, listed_date, is_active, aliases[], identifiers[].
         """
+        q = self._blank_to_none(q)
+        source = self._blank_to_none(source)
+        entity_type = self._blank_to_none(entity_type)
         if q is not None and len(str(q).strip()) < 2:
             raise ValueError("q (search) must be at least 2 characters.")
         if source is not None and str(source).strip().lower() not in self._SOURCE_VALUES:
@@ -152,6 +127,8 @@ class SanctionsAPI(BaseAPI):
         imo_number, mmsi, entity_source_uid, entity_name, source, programs[],
         country, is_active.
         """
+        q = self._blank_to_none(q)
+        source = self._blank_to_none(source)
         if q is not None and len(str(q).strip()) < 2:
             raise ValueError("q (search) must be at least 2 characters.")
         if source is not None and str(source).strip().lower() not in self._SOURCE_VALUES:
