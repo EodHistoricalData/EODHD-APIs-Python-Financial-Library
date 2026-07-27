@@ -30,7 +30,7 @@ TOKEN = "test1234567890123456"
 def test_countries_url(mock_session):
     _mock_response(mock_session)
     api = _make_api(mock_session)
-    api.get_real_estate_countries(api_token=TOKEN, sort="name", fmt="json")
+    api.get_real_estate_countries(api_token=TOKEN, sort="name")
 
     call_url = mock_session.get.call_args[0][0]
     assert "/real-estate/countries" in call_url
@@ -51,12 +51,6 @@ def test_countries_invalid_sort(mock_session):
     api = _make_api(mock_session)
     with pytest.raises(ValueError):
         api.get_real_estate_countries(api_token=TOKEN, sort="population")
-
-
-def test_countries_invalid_fmt(mock_session):
-    api = _make_api(mock_session)
-    with pytest.raises(ValueError):
-        api.get_real_estate_countries(api_token=TOKEN, fmt="xml")
 
 
 # ------------------------------------------------------- selected prices (SPP)

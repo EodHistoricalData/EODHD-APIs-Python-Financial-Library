@@ -16,12 +16,10 @@ class RealEstateAPI(BaseAPI):
     - Country codes are ISO alpha-2 and case-insensitive (normalised to uppercase).
     - Most endpoints return a JSON envelope { data, meta, links }; the
       /detailed/series catalogue returns { data, meta } (no links).
-    - Filtering uses filter[...] deep-object params; sort/fmt are bare params.
+    - Filtering uses filter[...] deep-object params; sort is a bare param.
     - Pagination uses page[offset] (>= 0) and page[limit] (1..500, default 50).
-    - fmt supports "json" and "csv" on every endpoint EXCEPT /detailed/series,
-      which always returns JSON.
-    - The underlying transport parses JSON, so pass fmt="csv" only if you handle
-      the raw payload yourself.
+    - Responses are parsed JSON; the CSV output format is not exposed by this
+      SDK (the transport always requests and parses JSON).
 
     Docs: https://eodhd.com/financial-apis/real-estate-data-api
     """
@@ -67,23 +65,10 @@ class RealEstateAPI(BaseAPI):
             raise ValueError(f"sort must be one of {list(allowed)}.")
         return sort
 
-    @staticmethod
-    def _validate_fmt(fmt):
-        """Validate fmt against the json/csv enum; return it lowercased."""
-        if fmt is None:
-            return None
-        fmt = str(fmt).strip().lower()
-        if fmt == "":
-            return None
-        if fmt not in ("json", "csv"):
-            raise ValueError("fmt must be 'json' or 'csv'.")
-        return fmt
-
     def get_real_estate_countries(
         self,
         api_token: str,
         sort: str = None,
-        fmt: str = None,
         page_limit: int = None,
         page_offset: int = None,
     ):
@@ -94,18 +79,14 @@ class RealEstateAPI(BaseAPI):
 
         Params:
             sort: one of code, -code, name, -name.
-            fmt: json (default) or csv.
             page_limit: 1..500 (default 50). page_offset: >= 0 (default 0).
 
         Response data[] item: { code, name, has_spp, has_dpp }.
         """
         sort = self._validate_sort(sort, self._SORT_COUNTRIES)
-        fmt = self._validate_fmt(fmt)
 
         query_string = ""
         query_string += self._param("sort", sort)
-        if fmt is not None:
-            query_string += self._param("fmt", fmt)
         query_string += self._real_estate_pagination(page_offset, page_limit)
 
         return self._rest_get_method(
@@ -124,7 +105,6 @@ class RealEstateAPI(BaseAPI):
         from_date: str = None,
         to_date: str = None,
         sort: str = None,
-        fmt: str = None,
         page_limit: int = None,
         page_offset: int = None,
     ):
@@ -140,14 +120,12 @@ class RealEstateAPI(BaseAPI):
             from_date: filter[from] — period YYYY-Qn (e.g. 2020-Q1).
             to_date: filter[to] — period YYYY-Qn.
             sort: one of period, -period, value, -value.
-            fmt: json (default) or csv.
             page_limit: 1..500 (default 50). page_offset: >= 0 (default 0).
 
         Response data[] item: { period, value, type, metric }.
         """
         code = self._validate_code(code)
         sort = self._validate_sort(sort, self._SORT_SERIES)
-        fmt = self._validate_fmt(fmt)
 
         query_string = ""
         query_string += self._filter("type", type)
@@ -155,8 +133,6 @@ class RealEstateAPI(BaseAPI):
         query_string += self._filter("from", from_date)
         query_string += self._filter("to", to_date)
         query_string += self._param("sort", sort)
-        if fmt is not None:
-            query_string += self._param("fmt", fmt)
         query_string += self._real_estate_pagination(page_offset, page_limit)
 
         return self._rest_get_method(
@@ -177,7 +153,6 @@ class RealEstateAPI(BaseAPI):
         from_date: str = None,
         to_date: str = None,
         sort: str = None,
-        fmt: str = None,
         page_limit: int = None,
         page_offset: int = None,
     ):
@@ -196,7 +171,6 @@ class RealEstateAPI(BaseAPI):
                 (e.g. 2020-01 or 2020-Q1).
             to_date: filter[to].
             sort: one of period, -period, value, -value.
-            fmt: json (default) or csv.
             page_limit: 1..500 (default 50). page_offset: >= 0 (default 0).
 
         Response data[] item includes period, value, frequency, covered_area(+label),
@@ -204,7 +178,6 @@ class RealEstateAPI(BaseAPI):
         """
         code = self._validate_code(code)
         sort = self._validate_sort(sort, self._SORT_SERIES)
-        fmt = self._validate_fmt(fmt)
 
         if freq is not None:
             freq_value = str(freq).strip().upper()
@@ -221,8 +194,6 @@ class RealEstateAPI(BaseAPI):
         query_string += self._filter("from", from_date)
         query_string += self._filter("to", to_date)
         query_string += self._param("sort", sort)
-        if fmt is not None:
-            query_string += self._param("fmt", fmt)
         query_string += self._real_estate_pagination(page_offset, page_limit)
 
         return self._rest_get_method(
@@ -237,7 +208,7 @@ class RealEstateAPI(BaseAPI):
         GET /api/real-estate/{code}/detailed/series
 
         Catalogue of the DPP series available for a country. Parameterless —
-        fmt is not honoured here (the endpoint always returns JSON).
+        the endpoint always returns JSON.
 
         Params:
             code: ISO alpha-2 country code (case-insensitive).
