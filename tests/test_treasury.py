@@ -59,11 +59,13 @@ def test_real_yield_rates(mock_session):
     assert "/ust/real-yield-rates" in call_url
 
 
-def test_date_params(mock_session):
+def test_no_pagination_or_date_params(mock_session):
+    """UST endpoints ignore pagination/date-range params, so the SDK must not emit them."""
     _mock_response(mock_session)
     api = _make_api(mock_session)
-    api.get_treasury_bill_rates(api_token="test1234567890123456", from_date="2024-01-01", to_date="2024-06-01")
+    api.get_treasury_bill_rates(api_token="test1234567890123456")
 
     call_url = mock_session.get.call_args[0][0]
-    assert "&from=2024-01-01" in call_url
-    assert "&to=2024-06-01" in call_url
+    assert "from=" not in call_url
+    assert "to=" not in call_url
+    assert "page[" not in call_url

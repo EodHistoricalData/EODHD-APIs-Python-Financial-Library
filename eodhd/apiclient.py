@@ -1558,37 +1558,37 @@ class APIClient:
             api_token=self._api_key, exchange=exchange, symbols=symbols, offset=offset, limit=limit,
         )
 
-    def get_treasury_bill_rates(self, from_date=None, to_date=None):
+    def get_treasury_bill_rates(self):
         """
         US Treasury Bill Rates
         Endpoint: GET /api/ust/bill-rates
         """
         api_call = TreasuryAPI(session=self._session, timeout=self._timeout)
-        return api_call.get_treasury_bill_rates(api_token=self._api_key, from_date=from_date, to_date=to_date)
+        return api_call.get_treasury_bill_rates(api_token=self._api_key)
 
-    def get_treasury_yield_rates(self, from_date=None, to_date=None):
+    def get_treasury_yield_rates(self):
         """
         US Treasury Yield Curve Rates
         Endpoint: GET /api/ust/yield-rates
         """
         api_call = TreasuryAPI(session=self._session, timeout=self._timeout)
-        return api_call.get_treasury_yield_rates(api_token=self._api_key, from_date=from_date, to_date=to_date)
+        return api_call.get_treasury_yield_rates(api_token=self._api_key)
 
-    def get_treasury_long_term_rates(self, from_date=None, to_date=None):
+    def get_treasury_long_term_rates(self):
         """
         US Treasury Long-Term Rates
         Endpoint: GET /api/ust/long-term-rates
         """
         api_call = TreasuryAPI(session=self._session, timeout=self._timeout)
-        return api_call.get_treasury_long_term_rates(api_token=self._api_key, from_date=from_date, to_date=to_date)
+        return api_call.get_treasury_long_term_rates(api_token=self._api_key)
 
-    def get_treasury_real_yield_rates(self, from_date=None, to_date=None):
+    def get_treasury_real_yield_rates(self):
         """
         US Treasury Real Yield Curve Rates
         Endpoint: GET /api/ust/real-yield-rates
         """
         api_call = TreasuryAPI(session=self._session, timeout=self._timeout)
-        return api_call.get_treasury_real_yield_rates(api_token=self._api_key, from_date=from_date, to_date=to_date)
+        return api_call.get_treasury_real_yield_rates(api_token=self._api_key)
 
     # ── Phase 2: Marketplace ──────────────────────────────────────
 
