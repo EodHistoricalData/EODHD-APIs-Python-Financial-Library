@@ -54,6 +54,7 @@ from eodhd.APIs import ExchangeDetailsV2API
 from eodhd.APIs import CreditSovereignRiskAPI
 from eodhd.APIs import SanctionsAPI
 from eodhd.APIs import InterestRatesAPI
+from eodhd.APIs import RealEstateAPI
 
 #Marketplace endpoints
 from eodhd.APIs import MPIndexComponentsAPI
@@ -1926,6 +1927,95 @@ class APIClient:
         api_call = InterestRatesAPI(session=self._session, timeout=self._timeout)
         return api_call.get_funding_stress(
             api_token=self._api_key, code=code, from_date=from_date, to_date=to_date,
+        )
+
+    def get_real_estate_countries(self, sort=None, page_limit=None, page_offset=None):
+        """
+        Real Estate Data API: covered countries and their datasets.
+        Endpoint: GET /api/real-estate/countries
+
+        Args:
+            sort        [OPTIONAL] - one of code, -code, name, -name
+            page_limit  [OPTIONAL] - 1..500 (default 50)
+            page_offset [OPTIONAL] - >= 0 (default 0)
+        Returns: dict envelope { data, meta, links }
+        For more information visit: https://eodhd.com/financial-apis/real-estate-data-api
+        """
+        api_call = RealEstateAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_real_estate_countries(
+            api_token=self._api_key, sort=sort,
+            page_limit=page_limit, page_offset=page_offset,
+        )
+
+    def get_real_estate_selected_prices(self, code, type=None, metric=None, from_date=None,
+                                        to_date=None, sort=None,
+                                        page_limit=None, page_offset=None):
+        """
+        Real Estate Data API: Selected Property Prices (SPP), headline harmonised series.
+        Endpoint: GET /api/real-estate/{code}
+
+        Args:
+            code        [REQUIRED] - ISO alpha-2 country code (case-insensitive), e.g. "US"
+            type        [OPTIONAL] - filter[type], nominal or real
+            metric      [OPTIONAL] - filter[metric], index or yoy
+            from_date   [OPTIONAL] - filter[from], period YYYY-Qn (e.g. 2020-Q1)
+            to_date     [OPTIONAL] - filter[to], period YYYY-Qn
+            sort        [OPTIONAL] - one of period, -period, value, -value
+            page_limit  [OPTIONAL] - 1..500 (default 50)
+            page_offset [OPTIONAL] - >= 0 (default 0)
+        Returns: dict envelope { data, meta, links }
+        For more information visit: https://eodhd.com/financial-apis/real-estate-data-api
+        """
+        api_call = RealEstateAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_real_estate_selected_prices(
+            api_token=self._api_key, code=code, type=type, metric=metric,
+            from_date=from_date, to_date=to_date, sort=sort,
+            page_limit=page_limit, page_offset=page_offset,
+        )
+
+    def get_real_estate_detailed_prices(self, code, area=None, property_type=None, vintage=None,
+                                        freq=None, from_date=None, to_date=None, sort=None,
+                                        page_limit=None, page_offset=None):
+        """
+        Real Estate Data API: Detailed Property Prices (DPP), granular national series.
+        Endpoint: GET /api/real-estate/{code}/detailed
+
+        Args:
+            code          [REQUIRED] - ISO alpha-2 country code (case-insensitive), e.g. "AE"
+            area          [OPTIONAL] - filter[area], BIS covered-area dimension code
+            property_type [OPTIONAL] - filter[property_type]
+            vintage       [OPTIONAL] - filter[vintage]
+            freq          [OPTIONAL] - filter[freq], one of Q, A, M, H
+            from_date     [OPTIONAL] - filter[from], period (e.g. 2020-01 or 2020-Q1)
+            to_date       [OPTIONAL] - filter[to]
+            sort          [OPTIONAL] - one of period, -period, value, -value
+            page_limit    [OPTIONAL] - 1..500 (default 50)
+            page_offset   [OPTIONAL] - >= 0 (default 0)
+        Returns: dict envelope { data, meta, links }
+        For more information visit: https://eodhd.com/financial-apis/real-estate-data-api
+        """
+        api_call = RealEstateAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_real_estate_detailed_prices(
+            api_token=self._api_key, code=code, area=area, property_type=property_type,
+            vintage=vintage, freq=freq, from_date=from_date, to_date=to_date,
+            sort=sort, page_limit=page_limit, page_offset=page_offset,
+        )
+
+    def get_real_estate_detailed_series(self, code):
+        """
+        Real Estate Data API: catalogue of available DPP series for a country.
+        Endpoint: GET /api/real-estate/{code}/detailed/series
+
+        Args:
+            code [REQUIRED] - ISO alpha-2 country code (case-insensitive), e.g. "US"
+
+        Note: parameterless catalogue; fmt=csv is not honoured (always JSON).
+        Returns: dict envelope { data, meta }
+        For more information visit: https://eodhd.com/financial-apis/real-estate-data-api
+        """
+        api_call = RealEstateAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_real_estate_detailed_series(
+            api_token=self._api_key, code=code,
         )
 
 
