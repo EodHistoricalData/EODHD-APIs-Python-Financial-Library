@@ -1558,37 +1558,61 @@ class APIClient:
             api_token=self._api_key, exchange=exchange, symbols=symbols, offset=offset, limit=limit,
         )
 
-    def get_treasury_bill_rates(self, from_date=None, to_date=None):
+    def get_treasury_bill_rates(self, year: int = None):
         """
         US Treasury Bill Rates
         Endpoint: GET /api/ust/bill-rates
+
+        Args:
+            year [OPTIONAL] - calendar year to select (sent as filter[year]).
+                Defaults to the current year when omitted. This is the only
+                supported filter: the endpoint has no pagination and no
+                date-range parameters.
         """
         api_call = TreasuryAPI(session=self._session, timeout=self._timeout)
-        return api_call.get_treasury_bill_rates(api_token=self._api_key, from_date=from_date, to_date=to_date)
+        return api_call.get_treasury_bill_rates(api_token=self._api_key, year=year)
 
-    def get_treasury_yield_rates(self, from_date=None, to_date=None):
+    def get_treasury_yield_rates(self, year: int = None):
         """
         US Treasury Yield Curve Rates
         Endpoint: GET /api/ust/yield-rates
+
+        Args:
+            year [OPTIONAL] - calendar year to select (sent as filter[year]).
+                Defaults to the current year when omitted. This is the only
+                supported filter: the endpoint has no pagination and no
+                date-range parameters.
         """
         api_call = TreasuryAPI(session=self._session, timeout=self._timeout)
-        return api_call.get_treasury_yield_rates(api_token=self._api_key, from_date=from_date, to_date=to_date)
+        return api_call.get_treasury_yield_rates(api_token=self._api_key, year=year)
 
-    def get_treasury_long_term_rates(self, from_date=None, to_date=None):
+    def get_treasury_long_term_rates(self, year: int = None):
         """
         US Treasury Long-Term Rates
         Endpoint: GET /api/ust/long-term-rates
+
+        Args:
+            year [OPTIONAL] - calendar year to select (sent as filter[year]).
+                Defaults to the current year when omitted. This is the only
+                supported filter: the endpoint has no pagination and no
+                date-range parameters.
         """
         api_call = TreasuryAPI(session=self._session, timeout=self._timeout)
-        return api_call.get_treasury_long_term_rates(api_token=self._api_key, from_date=from_date, to_date=to_date)
+        return api_call.get_treasury_long_term_rates(api_token=self._api_key, year=year)
 
-    def get_treasury_real_yield_rates(self, from_date=None, to_date=None):
+    def get_treasury_real_yield_rates(self, year: int = None):
         """
         US Treasury Real Yield Curve Rates
         Endpoint: GET /api/ust/real-yield-rates
+
+        Args:
+            year [OPTIONAL] - calendar year to select (sent as filter[year]).
+                Defaults to the current year when omitted. This is the only
+                supported filter: the endpoint has no pagination and no
+                date-range parameters.
         """
         api_call = TreasuryAPI(session=self._session, timeout=self._timeout)
-        return api_call.get_treasury_real_yield_rates(api_token=self._api_key, from_date=from_date, to_date=to_date)
+        return api_call.get_treasury_real_yield_rates(api_token=self._api_key, year=year)
 
     # ── Phase 2: Marketplace ──────────────────────────────────────
 
