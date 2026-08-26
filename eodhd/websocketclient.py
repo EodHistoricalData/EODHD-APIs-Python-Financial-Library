@@ -8,6 +8,19 @@ import pandas as pd
 
 pd.set_option('display.float_format', '{:.8f}'.format)
 
+# Codes that mean "this connection will never work" rather than "that request was wrong".
+AUTH_FAILURE_CODES = frozenset({401, 403, 422})
+
+# Markets served by the real-time WebSocket. The Cboe equity markets (us, eu) each expose
+# four streams; forex and crypto come from separate providers and have trades only.
+VALID_ENDPOINTS = frozenset(
+    {
+        "us", "us-quote", "us-candles", "us-status",
+        "eu", "eu-quote", "eu-candles", "eu-status",
+        "forex", "crypto",
+    }
+)
+
 
 class WebSocketClient:
     def __init__(
@@ -22,29 +35,38 @@ class WebSocketClient:
         display_candle_1h: bool = False,
         max_reconnect_attempts: int = 5,
         reconnect_base_delay: float = 1.0,
+        max_symbols: int = 50,
     ) -> None:
         # Validate API key
         prog = re.compile(r"^[A-z0-9.]{16,32}$")
         if not prog.match(api_key):
             raise ValueError("API key is invalid")
 
-        # Validate endpoint
-        if endpoint not in ["us", "us-quote", "forex", "crypto"]:
-            raise ValueError("Endpoint is invalid")
+        # Validate endpoint. The Cboe equity markets each serve four streams: trades,
+        # quotes, one-minute bars and trading status.
+        if endpoint not in VALID_ENDPOINTS:
+            raise ValueError(f"Endpoint is invalid: {endpoint}. Valid: {', '.join(sorted(VALID_ENDPOINTS))}")
 
         # Validate symbol list
         if len(symbols) == 0:
             raise ValueError("No symbol(s) provided")
 
-        # Validate individual symbols
-        prog = re.compile(r"^[A-z0-9-$]{1,48}$")
+        # Validate individual symbols. The dot is required for European tickers
+        # (TICKER.EXCHANGE, e.g. GSK.LSE); the previous class was [A-z], which also
+        # admitted the punctuation sitting between Z and a in ASCII.
+        prog = re.compile(r"^[A-Za-z0-9.\-$]{1,48}$")
         for symbol in symbols:
             if not prog.match(symbol):
                 raise ValueError(f"Symbol is invalid: {symbol}")
 
-        # Validate max symbol subscriptions
-        if len(symbols) > 50:
-            raise ValueError("Max symbol subscription count is 50!")
+        # Validate max symbol subscriptions. 50 is the default plan allowance; larger
+        # plans exist, so this is a guard rail rather than a protocol limit — the server
+        # answers "Symbols limit reached" for the authoritative cap.
+        if len(symbols) > max_symbols:
+            raise ValueError(
+                f"Max symbol subscription count is {max_symbols}! "
+                "Pass max_symbols= if your plan allows more."
+            )
 
         # Map class arguments to private variables
         self._api_key = api_key
@@ -57,6 +79,7 @@ class WebSocketClient:
         self._display_candle_1h = display_candle_1h
         self._max_reconnect_attempts = max_reconnect_attempts
         self._reconnect_base_delay = reconnect_base_delay
+        self._max_symbols = max_symbols
 
         self.running = True
         self.message = None
@@ -146,6 +169,37 @@ class WebSocketClient:
                     except (json.JSONDecodeError, TypeError):
                         continue
 
+                    # Control frames are not market data, and the service uses TWO shapes
+                    # for them. Authentication failures arrive as {"status": 403|422,
+                    # "message": "Server error"} — note the key is "status" — and they come
+                    # over the socket AFTER a successful handshake, so the connection
+                    # opening is not evidence the token was accepted. Everything else uses
+                    # "status_code": the 200 ack, 404 for an unknown market, the 422 family
+                    # for bad subscribe commands, 429 for the connection cap, 500.
+                    #
+                    # The key is the discriminator, and that is deliberate: 422 appears in
+                    # BOTH shapes. As "status" it means the token is missing and the
+                    # connection is dead; as "status_code" it means one subscribe command
+                    # was wrong ("Symbols limit reached", "Invalid request") and the
+                    # connection is perfectly usable. Treating every 422 as fatal would tear
+                    # down a working stream over a recoverable mistake, so do not
+                    # "simplify" this into a single lookup across both keys.
+                    if isinstance(message_json, dict) and (
+                        "status" in message_json or "status_code" in message_json
+                    ):
+                        code = message_json.get("status", message_json.get("status_code"))
+                        if "status" in message_json and code in AUTH_FAILURE_CODES:
+                            print(
+                                f"Authentication rejected by the server ({code}): "
+                                f"{message_json.get('message')}. Check that the API key is "
+                                "correct and that the plan includes real-time access; "
+                                "retrying will not change the answer."
+                            )
+                            self.running = False
+                            self.stop_event.set()
+                            break
+                        continue
+
                     if self._store_data:
                         self.data_list.append(self.message)
 
@@ -199,20 +253,30 @@ class WebSocketClient:
             candle["m"] = message_json["s"]
             candle["g"] = granularity
 
-        if "p" in message_json and "o" not in candle:
-            candle["o"] = message_json["p"]
-            candle["h"] = message_json["p"]
-            candle["l"] = message_json["p"]
-            candle["c"] = message_json["p"]
-            if "q" in message_json:
-                candle["v"] = float(message_json["q"])
-        elif "p" in message_json and "o" in candle:
-            candle["c"] = message_json["p"]
-            if message_json["p"] > candle["h"]:
-                candle["h"] = message_json["p"]
-            if message_json["p"] < candle["l"]:
-                candle["l"] = message_json["p"]
-            candle["v"] += float(message_json["q"])
+        # Crypto sends p/q as JSON strings while equities send numbers, so coerce before
+        # any comparison — "9" > "10" is true for strings and would corrupt high/low.
+        # Traded size is "q" on crypto and "v" on the equity trade streams.
+        if "p" in message_json:
+            price = float(message_json["p"])
+            size = message_json.get("q", message_json.get("v", 0))
+            try:
+                size = float(size)
+            except (TypeError, ValueError):
+                size = 0.0
+
+            if "o" not in candle:
+                candle["o"] = price
+                candle["h"] = price
+                candle["l"] = price
+                candle["c"] = price
+                candle["v"] = size
+            else:
+                candle["c"] = price
+                if price > candle["h"]:
+                    candle["h"] = price
+                if price < candle["l"]:
+                    candle["l"] = price
+                candle["v"] = candle.get("v", 0.0) + size
 
     def _keepalive(self, interval=30):
         while not self.stop_event.is_set():
