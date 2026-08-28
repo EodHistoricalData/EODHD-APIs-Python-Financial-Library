@@ -1,0 +1,80 @@
+name: Release
+
+# Manual, like the Node SDK's. Publishing is deliberate, not a side effect of a merge.
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Dry run (build, verify and test, skip the upload)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write        # the OIDC identity PyPI trusted publishing verifies
+
+# Two dispatches racing would both try to upload the same files; PyPI rejects the
+# second, which reads as a broken pipeline rather than a duplicate.
+concurrency: release-pypi
+
+jobs:
+  publish:
+    # workflow_dispatch runs against whatever ref the operator picks, and checkout
+    # defaults to that ref — without this, a dispatch from a feature branch would
+    # publish that branch's content under whatever version its setup.py carried.
+    # Guarded twice: the condition stops the run, the explicit ref makes what is
+    # published deterministic if it ever starts.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      # First-party actions pinned by SHA too: this workflow uploads to a public
+      # index, so a moved tag anywhere in it is a supply-chain problem.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: refs/heads/main
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Install build tooling
+        # Pinned: this runs inside the pipeline that builds and uploads the package,
+        # so "whatever released today" is both a reproducibility problem and an
+        # avoidable supply-chain surface. Raise these deliberately.
+        run: python -m pip install --upgrade "build==1.2.2.post1" "twine==6.1.0" pytest
+
+      - name: Build sdist and wheel
+        run: python -m build
+
+      - name: Check metadata
+        run: python -m twine check dist/*
+
+      - name: Verify the built version matches the changelog
+        # A twenty-month backlog is exactly where a stale version string hides. Fail
+        # here rather than discover it as an unwithdrawable PyPI upload.
+        run: |
+          set -euo pipefail
+          BUILT=$(ls dist/*.whl | sed -E 's/.*eodhd-([^-]+)-py3.*/\1/')
+          echo "built version: $BUILT"
+          grep -q "^## \[$BUILT\]" CHANGELOG.md \
+            || { echo "CHANGELOG.md has no '## [$BUILT]' section"; exit 1; }
+
+      # Install the ARTEFACT, not the working tree. An editable install would test the
+      # source and tell us nothing about whether the wheel we are about to publish
+      # actually contains the package — which is the failure mode a MANIFEST.in or
+      # package_data mistake produces, and it ships silently.
+      - name: Install the built wheel
+        run: python -m pip install --force-reinstall dist/*.whl
+
+      - name: Run tests against the installed wheel
+        # This repo has no CI of its own, so the release path is the only gate the code
+        # gets. Publishing something whose tests were never run is worse than not
+        # publishing.
+        run: python -m pytest tests/ -q
+
+      - name: Publish to PyPI
+        if: ${{ !inputs.dry-run }}
+        # Published via OIDC trusted publishing: the project is bound on PyPI to this
+        # repository and this workflow, so there is no API token to store, rotate or
+        # leak. Pinned by commit SHA rather than tag — a tag can be moved, a SHA cannot.
+        uses: pypa/gh-action-pypi-publish@a892a5a61159132606e93a2fa6f4358831b04d26  # v1.14.2
