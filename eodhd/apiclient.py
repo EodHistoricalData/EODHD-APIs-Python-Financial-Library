@@ -55,6 +55,7 @@ from eodhd.APIs import CreditSovereignRiskAPI
 from eodhd.APIs import SanctionsAPI
 from eodhd.APIs import InterestRatesAPI
 from eodhd.APIs import RealEstateAPI
+from eodhd.APIs import SecFilingsAPI
 
 #Marketplace endpoints
 from eodhd.APIs import MPIndexComponentsAPI
@@ -2016,6 +2017,77 @@ class APIClient:
         api_call = RealEstateAPI(session=self._session, timeout=self._timeout)
         return api_call.get_real_estate_detailed_series(
             api_token=self._api_key, code=code,
+        )
+
+    def get_sec_filings_overview(self, symbol):
+        """
+        SEC Filings API: overview of a company's filings (counts, latest date and
+        URL per form type: 10-K, 10-Q, 8-K, Form 4).
+        Endpoint: GET /api/sec-filings/{symbol}
+
+        Args:
+            symbol [REQUIRED] - ticker symbol, e.g. "AAPL.US"
+        Returns: dict envelope { data, meta, links } where data is a dict
+            { ticker, exchange, name, cik, filings }
+        For more information visit: https://eodhd.com/financial-apis/sec-filings-api
+        """
+        api_call = SecFilingsAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_sec_filings_overview(
+            api_token=self._api_key, symbol=symbol,
+        )
+
+    def get_sec_filings_10k(self, symbol, page_offset=0, page_limit=20):
+        """
+        SEC Filings API: annual reports (10-K) with parsed financials, paginated.
+        Endpoint: GET /api/sec-filings/{symbol}/10k
+
+        Args:
+            symbol      [REQUIRED] - ticker symbol, e.g. "AAPL.US"
+            page_offset [OPTIONAL] - >= 0 (default 0)
+            page_limit  [OPTIONAL] - 1..100 (default 20)
+        Returns: dict envelope { data, meta, links }
+        For more information visit: https://eodhd.com/financial-apis/sec-filings-api
+        """
+        api_call = SecFilingsAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_sec_filings_10k(
+            api_token=self._api_key, symbol=symbol,
+            page_offset=page_offset, page_limit=page_limit,
+        )
+
+    def get_sec_filings_10q(self, symbol, page_offset=0, page_limit=20):
+        """
+        SEC Filings API: quarterly reports (10-Q) with parsed financials, paginated.
+        Endpoint: GET /api/sec-filings/{symbol}/10q
+
+        Args:
+            symbol      [REQUIRED] - ticker symbol, e.g. "AAPL.US"
+            page_offset [OPTIONAL] - >= 0 (default 0)
+            page_limit  [OPTIONAL] - 1..100 (default 20)
+        Returns: dict envelope { data, meta, links }
+        For more information visit: https://eodhd.com/financial-apis/sec-filings-api
+        """
+        api_call = SecFilingsAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_sec_filings_10q(
+            api_token=self._api_key, symbol=symbol,
+            page_offset=page_offset, page_limit=page_limit,
+        )
+
+    def get_sec_filings_8k(self, symbol, page_offset=0, page_limit=20):
+        """
+        SEC Filings API: material events (8-K), paginated.
+        Endpoint: GET /api/sec-filings/{symbol}/8k
+
+        Args:
+            symbol      [REQUIRED] - ticker symbol, e.g. "AAPL.US"
+            page_offset [OPTIONAL] - >= 0 (default 0)
+            page_limit  [OPTIONAL] - 1..100 (default 20)
+        Returns: dict envelope { data, meta, links }
+        For more information visit: https://eodhd.com/financial-apis/sec-filings-api
+        """
+        api_call = SecFilingsAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_sec_filings_8k(
+            api_token=self._api_key, symbol=symbol,
+            page_offset=page_offset, page_limit=page_limit,
         )
 
 
