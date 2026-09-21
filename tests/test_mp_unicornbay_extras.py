@@ -64,5 +64,6 @@ def test_get_logo_returns_bytes(mock_session):
     api = MPUnicornbayExtrasAPI(session=mock_session)
     result = api.get_logo(api_token="test1234567890123456", symbol="AAPL.US")
 
-    assert "/mp/unicornbay/logo/AAPL.US" in mock_session.get.call_args[0][0]
+    assert "/logo/AAPL.US" in mock_session.get.call_args[0][0]
+    assert "/mp/unicornbay/logo/" not in mock_session.get.call_args[0][0]
     assert result == b"\x89PNG"

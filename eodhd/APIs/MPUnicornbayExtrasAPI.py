@@ -8,7 +8,7 @@ class MPUnicornbayExtrasAPI(BaseAPI):
     Wrapper for additional Unicornbay Marketplace endpoints:
 
         GET /api/mp/unicornbay/tickdata/ticks
-        GET /api/mp/unicornbay/logo/{symbol}
+        GET /api/logo/{symbol} (Stock Market Logos API subscription)
     """
 
     def get_tickdata(self, api_token: str, symbol: str, from_timestamp: int = None, to_timestamp: int = None,
@@ -56,7 +56,10 @@ class MPUnicornbayExtrasAPI(BaseAPI):
 
     def get_logo(self, api_token: str, symbol: str):
         """
-        Get a company logo via Unicornbay Marketplace.
+        Get a company logo (Marketplace: Stock Market Logos API subscription).
+
+        Despite the "unicornbay" namespace, this marketplace product is served from the
+        plain logo endpoint — mp/unicornbay/logo/{symbol} is not a real backend route.
 
         Parameters
         ----------
@@ -73,6 +76,6 @@ class MPUnicornbayExtrasAPI(BaseAPI):
 
         return self._rest_get_raw(
             api_key=api_token,
-            endpoint="mp/unicornbay/logo",
+            endpoint="logo",
             uri=symbol.strip(),
         )

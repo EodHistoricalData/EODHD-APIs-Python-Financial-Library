@@ -1640,8 +1640,8 @@ class APIClient:
 
     def mp_unicornbay_logo(self, symbol):
         """
-        Marketplace: Unicornbay - Company logo
-        Endpoint: GET /api/mp/unicornbay/logo/{symbol}
+        Marketplace: Stock Market Logos API subscription
+        Endpoint: GET /api/logo/{symbol}
 
         Returns: bytes (image data)
         """
