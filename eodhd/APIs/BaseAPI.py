@@ -8,6 +8,7 @@ from requests import Timeout as requests_Timeout
 from rich.console import Console
 
 from eodhd.errors import EODHDHTTPError, EODHDConnectionError, EODHDTimeoutError
+from eodhd.rate import RateLimitInfo
 
 
 class BaseAPI:
@@ -17,6 +18,26 @@ class BaseAPI:
         self._session = session
         self._timeout = timeout
         self.console = Console()
+
+    @property
+    def rate(self) -> RateLimitInfo:
+        """Rate-limit snapshot from the most recently seen response on this session.
+
+        Scoped per-session (not a process-wide global), but it is the *last observed*
+        snapshot for that session — not per-request. If the same session is shared
+        across concurrent requests, this reflects whichever response updated it last.
+        """
+        target = self._session if self._session is not None else self
+        return getattr(target, "_eodhd_rate_limit_info", RateLimitInfo())
+
+    def _track_rate_limit(self, resp) -> None:
+        """Update the session's rate-limit snapshot. A response without the headers
+        leaves the prior snapshot untouched rather than clearing known-good state."""
+        info = RateLimitInfo.from_headers(resp.headers)
+        if info is None:
+            return
+        target = self._session if self._session is not None else self
+        target._eodhd_rate_limit_info = info
 
     @staticmethod
     def _blank_to_none(value):
@@ -110,6 +131,8 @@ class BaseAPI:
         except requests_Timeout as err:
             raise EODHDTimeoutError(str(err)) from err
 
+        self._track_rate_limit(resp)
+
         if resp.status_code != 200:
             try:
                 body = resp.text
@@ -152,6 +175,8 @@ class BaseAPI:
         except requests_Timeout as err:
             raise EODHDTimeoutError(str(err)) from err
 
+        self._track_rate_limit(resp)
+
         if resp.status_code != 200:
             try:
                 body = resp.text
@@ -189,6 +214,8 @@ class BaseAPI:
             raise EODHDConnectionError(str(err)) from err
         except requests_Timeout as err:
             raise EODHDTimeoutError(str(err)) from err
+
+        self._track_rate_limit(resp)
 
         if resp.status_code != 200:
             try:

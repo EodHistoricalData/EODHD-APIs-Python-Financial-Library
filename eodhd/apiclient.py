@@ -16,6 +16,7 @@ from rich.console import Console
 from rich.progress import track
 
 from eodhd.errors import EODHDHTTPError, EODHDConnectionError, EODHDTimeoutError
+from eodhd.rate import RateLimitInfo
 
 from eodhd.APIs import HistoricalDividendsAPI, UpcomingDividendsAPI
 from eodhd.APIs import HistoricalSplitsAPI
@@ -146,6 +147,16 @@ class APIClient:
     def __exit__(self, *args):
         self.close()
 
+    @property
+    def rate(self) -> RateLimitInfo:
+        """Rate-limit snapshot from the most recently seen response on this client.
+
+        Scoped per-client (not a process-wide global), but it is the *last observed*
+        snapshot for this client's session — not per-request. If this client's session
+        is shared or used concurrently, this reflects whichever response updated it last.
+        """
+        return getattr(self._session, "_eodhd_rate_limit_info", RateLimitInfo())
+
     def _rest_get(self, endpoint: str = "", uri: str = "", querystring: str = "") -> pd.DataFrame():
         """Generic REST GET — raises EODHDHTTPError/EODHDConnectionError/EODHDTimeoutError on failure."""
 
@@ -160,6 +171,10 @@ class APIClient:
             raise EODHDConnectionError(str(err)) from err
         except requests_Timeout as err:
             raise EODHDTimeoutError(str(err)) from err
+
+        info = RateLimitInfo.from_headers(resp.headers)
+        if info is not None:
+            self._session._eodhd_rate_limit_info = info
 
         if resp.status_code != 200:
             try:
