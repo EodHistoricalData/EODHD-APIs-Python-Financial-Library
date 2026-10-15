@@ -31,6 +31,9 @@ class FinancialNewsAPI(BaseAPI):
 
         If both s and t are provided, this method keeps backward-compatible behavior and
         prefers `s` (same as the old implementation).
+
+        `offset` maximum is 9000. To reach older articles, narrow the period with
+        from_date / to_date.
         """
         endpoint = "news"
         query_string = ""
