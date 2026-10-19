@@ -1,5 +1,7 @@
 # APIs/SecFilingsAPI.py
 
+from urllib.parse import quote
+
 from .BaseAPI import BaseAPI
 
 
@@ -26,7 +28,7 @@ class SecFilingsAPI(BaseAPI):
         """
 
         endpoint = 'sec-filings'
-        uri = f'{symbol}/form4'
+        uri = f"{quote(symbol, safe='')}/form4"
 
         query_string = ''
         if page_offset is not None:

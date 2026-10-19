@@ -89,3 +89,23 @@ def test_form4_returns_dict(mock_session):
     assert "meta" in result
     assert "links" in result
     assert result["meta"]["total"] == 594
+
+
+def test_form4_symbol_is_path_encoded(mock_session):
+    _mock_response(mock_session)
+    api = _make_api(mock_session)
+    api.get_sec_filings_form4(api_token="x", symbol="A/B?C")
+
+    call_url = mock_session.get.call_args[0][0]
+    assert "/sec-filings/A%2FB%3FC/form4?" in call_url
+
+
+def test_legacy_insider_transactions_warns_deprecation():
+    from eodhd import APIClient
+
+    client = APIClient("x" * 20)
+    client._session = MagicMock()
+    client._session.get.return_value.json.return_value = []
+    client._session.get.return_value.status_code = 200
+    with pytest.warns(DeprecationWarning):
+        client.get_insider_transactions_data(code="AAPL.US")
