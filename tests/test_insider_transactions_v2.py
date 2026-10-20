@@ -1,9 +1,9 @@
-"""Tests for SecFilingsAPI — Insider Transactions v2 (SEC Form 4)."""
+"""Tests for InsiderTransactionsV2API — Insider Transactions v2 (SEC Form 4)."""
 
 import pytest
 from unittest.mock import MagicMock
 
-from eodhd.APIs.SecFilingsAPI import SecFilingsAPI
+from eodhd.APIs.InsiderTransactionsV2API import InsiderTransactionsV2API
 
 
 @pytest.fixture
@@ -12,7 +12,7 @@ def mock_session():
 
 
 def _make_api(session):
-    return SecFilingsAPI(session=session)
+    return InsiderTransactionsV2API(session=session)
 
 
 def _mock_response(session, data=None):

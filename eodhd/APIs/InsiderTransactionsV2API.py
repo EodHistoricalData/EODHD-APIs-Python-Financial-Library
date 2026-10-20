@@ -1,11 +1,11 @@
-# APIs/SecFilingsAPI.py
+# APIs/InsiderTransactionsV2API.py
 
 from urllib.parse import quote
 
 from .BaseAPI import BaseAPI
 
 
-class SecFilingsAPI(BaseAPI):
+class InsiderTransactionsV2API(BaseAPI):
 
     def get_sec_filings_form4(self, api_token: str, symbol: str,
                               page_offset: int = None, page_limit: int = None):

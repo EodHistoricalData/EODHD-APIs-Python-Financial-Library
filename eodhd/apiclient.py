@@ -25,7 +25,7 @@ from eodhd.APIs import LiveStockPricesAPI
 from eodhd.APIs import LiveExtendedQuotesAPI
 from eodhd.APIs import EconomicEventsDataAPI
 from eodhd.APIs import InsiderTransactionsAPI
-from eodhd.APIs import SecFilingsAPI
+from eodhd.APIs import InsiderTransactionsV2API
 from eodhd.APIs import FundamentalDataAPI
 from eodhd.APIs import BulkEodSplitsDividendsDataAPI
 from eodhd.APIs import UpcomgingEarningsAPI
@@ -760,7 +760,7 @@ class APIClient:
 
         For more information visit: https://eodhd.com/financial-apis/insider-transactions-api/
         """
-        api_call = SecFilingsAPI(session=self._session, timeout=self._timeout)
+        api_call = InsiderTransactionsV2API(session=self._session, timeout=self._timeout)
         return api_call.get_sec_filings_form4(
             api_token=self._api_key,
             symbol=symbol,
