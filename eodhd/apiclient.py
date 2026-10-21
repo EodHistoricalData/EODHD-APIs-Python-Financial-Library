@@ -1145,7 +1145,7 @@ class APIClient:
             limit=limit
         )
 
-    def financial_news(self, s=None, t=None, from_date=None, to_date=None, limit=None, offset=None):
+    def financial_news(self, s=None, t=None, from_date=None, to_date=None, limit=None, offset=None, direction=None):
         """
         Available args:
             s (required if t empty) - The ticker code to get news for, e.g. AAPL.US
@@ -1153,7 +1153,10 @@ class APIClient:
             from_date (not required) - Start date (YYYY-MM-DD)
             to_date (not required) - End date (YYYY-MM-DD)
             limit (not required) - Number of results (default: 50, min: 1, max: 1000)
-            offset (not required) - Offset for pagination (default: 0)
+            offset (not required) - Offset for pagination (default: 0, max: 10000; offset + limit must not exceed 10000)
+            direction (not required) - 0 = newest first (default); 1 = in the order articles entered the
+                database, for paging forward with offset without duplicates. With 1, from_date and to_date
+                are required and the window must not exceed 31 days (both ends counted), else the API answers 422
         """
         api_call = FinancialNewsAPI(session=self._session, timeout=self._timeout)
         return api_call.financial_news(
@@ -1164,6 +1167,7 @@ class APIClient:
             to_date=to_date,
             limit=limit,
             offset=offset,
+            direction=direction,
         )
 
     def get_sentiment(self, s, from_date=None, to_date=None):

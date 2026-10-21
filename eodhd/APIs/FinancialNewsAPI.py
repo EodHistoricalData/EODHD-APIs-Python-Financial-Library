@@ -21,6 +21,7 @@ class FinancialNewsAPI(BaseAPI):
         to_date: str | None = None,
         limit: int | None = None,
         offset: int | None = None,
+        direction: int | None = None,
     ):
         """
         GET /api/news
@@ -32,8 +33,15 @@ class FinancialNewsAPI(BaseAPI):
         If both s and t are provided, this method keeps backward-compatible behavior and
         prefers `s` (same as the old implementation).
 
-        `offset` maximum is 9000. To reach older articles, narrow the period with
-        from_date / to_date.
+        `offset` maximum is 10000, and offset + limit must not exceed 10000. To reach
+        older articles, narrow the period with from_date / to_date.
+
+        direction (optional, 0 or 1; API default 0):
+        - 0: newest first.
+        - 1: articles in the order they entered the database, so you can page forward
+          with `offset` without duplicates. Requires from_date and to_date, and the
+          window between them must not exceed 31 days (both ends counted); otherwise
+          the API answers 422.
         """
         endpoint = "news"
         query_string = ""
@@ -55,6 +63,8 @@ class FinancialNewsAPI(BaseAPI):
             query_string += "&from=" + str(from_date)
         if to_date is not None:
             query_string += "&to=" + str(to_date)
+        if direction is not None:
+            query_string += "&direction=" + str(direction)
 
         return self._rest_get_method(api_key=api_token, endpoint=endpoint, querystring=query_string)
 

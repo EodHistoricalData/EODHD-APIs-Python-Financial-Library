@@ -6,6 +6,18 @@ All notable changes to this package are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- **News API: `direction` parameter** on `financial_news` (`APIClient` and `FinancialNewsAPI`).
+  `0` (default) is newest first; `1` returns articles in the order they entered the
+  database, so a client can page forward with `offset` without duplicates. With
+  `direction=1`, `from_date` and `to_date` are required and the window must not exceed
+  31 days (both ends counted); the API answers 422 otherwise.
+
+### Changed
+
+- **News API: `offset` cap raised** to 10000 (was 9000); `offset + limit` must not exceed 10000.
+
 ## [1.4.0] — 2026-08-28
 
 The first release since **1.0.32 (2024-12-18)**. Twenty months of work reached `main`
