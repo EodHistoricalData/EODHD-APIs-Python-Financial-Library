@@ -39,6 +39,7 @@ from .SanctionsAPI import SanctionsAPI
 from .InterestRatesAPI import InterestRatesAPI
 from .RealEstate import RealEstateAPI
 from .InsiderTransactionsV2API import InsiderTransactionsV2API
+from .EtfHoldingsAPI import EtfHoldingsAPI
 
 #Marketplace endpoints
 from .MPIndexComponentsAPI import MPIndexComponentsAPI

@@ -6,6 +6,11 @@ All notable changes to this package are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- **ETF Holdings API (beta, US-listed ETFs only, SEC N-PORT):** `get_etf_holdings(ticker)`
+  and `get_etf_held_by(ticker, page_offset, page_limit)`. 10 API calls per request.
+
 ## [1.4.0] — 2026-08-28
 
 The first release since **1.0.32 (2024-12-18)**. Twenty months of work reached `main`

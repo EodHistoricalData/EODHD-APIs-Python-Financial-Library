@@ -57,6 +57,7 @@ from eodhd.APIs import CreditSovereignRiskAPI
 from eodhd.APIs import SanctionsAPI
 from eodhd.APIs import InterestRatesAPI
 from eodhd.APIs import RealEstateAPI
+from eodhd.APIs import EtfHoldingsAPI
 
 #Marketplace endpoints
 from eodhd.APIs import MPIndexComponentsAPI
@@ -2055,6 +2056,51 @@ class APIClient:
         api_call = RealEstateAPI(session=self._session, timeout=self._timeout)
         return api_call.get_real_estate_detailed_series(
             api_token=self._api_key, code=code,
+        )
+
+    # ------------------------------------------------------------------
+    # ETF Holdings API (/api/etf) - beta
+    # ------------------------------------------------------------------
+    def get_etf_holdings(self, ticker: str) -> dict:
+        """
+        ETF Holdings (beta): holdings of one US-listed ETF, from SEC N-PORT filings.
+        Endpoint: GET /api/etf/holdings/{ticker}
+
+        Beta API, US-listed ETFs only (other exchanges return 422).
+        Cost: 10 API calls per request. Plans: Fundamentals Data Feed and All-In-One.
+        The demo token works for VTI.
+
+        Args:
+            ticker [REQUIRED] - US ETF ticker, with or without .US (e.g. "VTI", "XLE.US")
+        Returns: dict envelope { data, meta, links }. All positions come in one
+        response (large funds are several MB). data.Holdings is an empty list,
+        not an object, for a fund with no positions.
+        For more information visit: https://eodhd.com/financial-apis/etf-holdings-api
+        """
+        api_call = EtfHoldingsAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_holdings(api_token=self._api_key, ticker=ticker)
+
+    def get_etf_held_by(self, ticker: str, page_offset: int = None, page_limit: int = None) -> dict:
+        """
+        ETF Holdings (beta): funds that hold a given security (reverse lookup).
+        Endpoint: GET /api/etf/security/{ticker}/held-by
+
+        Beta API, US-listed ETFs only.
+        Cost: 10 API calls per request. Plans: Fundamentals Data Feed and All-In-One.
+        The demo token is rejected (403) on this endpoint.
+
+        Args:
+            ticker      [REQUIRED] - the security to look up, not a fund (e.g. "NVDA", "ASML.AS")
+            page_offset [OPTIONAL] - zero-based, default 0
+            page_limit  [OPTIONAL] - 1..5000, default 100
+        Returns: dict envelope { data, meta, links }; data.funds is sorted by weight
+        descending, links.next is a relative URL or None on the last page.
+        For more information visit: https://eodhd.com/financial-apis/etf-holdings-api
+        """
+        api_call = EtfHoldingsAPI(session=self._session, timeout=self._timeout)
+        return api_call.get_held_by(
+            api_token=self._api_key, ticker=ticker,
+            page_offset=page_offset, page_limit=page_limit,
         )
 
 
